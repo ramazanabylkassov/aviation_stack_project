@@ -23,7 +23,7 @@ variable "bq_dataset_name" {
   default     = "flights_dataset"
 }
 
-variable "terraform_service_account" {
+variable "composer_service_account" {
   description = "Service account for composer"
   default     = "composer-251@de-project-flight-analyzer.iam.gserviceaccount.com"
 }
