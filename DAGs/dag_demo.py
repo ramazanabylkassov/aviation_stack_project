@@ -6,8 +6,16 @@ from airflow.operators.python_operator import PythonOperator
 def print_hello():
     return 'Hello'
 
+def test_print_hello():
+    """Test that the print_hello function returns 'Hello'."""
+    assert print_hello() == 'Hello', "print_hello should return 'Hello'"
+
 def print_world():
     return 'World'
+
+def test_print_world():
+    """Test that the print_world function returns 'World'."""
+    assert print_world() == 'World', "print_world should return 'World'"
 
 # Define default arguments for the DAG
 default_args = {
