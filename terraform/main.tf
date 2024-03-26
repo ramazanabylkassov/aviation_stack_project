@@ -35,7 +35,7 @@ resource "google_bigquery_dataset" "demo_dataset" {
 
 resource "google_composer_environment" "test" {
   name   = var.project_name
-  region = var.project_region
+  region = "us-central1"
   config {
 
     software_config {
