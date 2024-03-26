@@ -5,31 +5,40 @@ import requests
 import dlt
 import os
 
-def first_dag():
+
+def upload_to_gcs():
     bucket_name = "de-project-flight-analyzer"
-    # Set the bucket_url. We can also use a local folder
+    iata = "NQZ"
+    prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+    def download_data(iata=None):
+        url_base = f"http://api.aviationstack.com/v1/flights?access_key=4c9daccbaa0ab0dc63923014205e07c3&dep_iata={iata}"
+        offset = 0
+        while True:
+            url = f"{url_base}&offset={offset}"
+            temp_json = requests.get(url).json()  # Convert response to JSON
+            temp_data = temp_json.get('data', [])  # Extract data from JSON
+            if not temp_data:
+                break
+            yield temp_data
+            offset += 100
+
     os.environ['DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{bucket_name}'
 
-    url = "https://api.aviationstack.com/v1/flights \
-        ? access_key = b1bb7ec89c84dee6f117d808df009e49 \
-            & flight_date = 2024-03-25 \
-                & dep_iata = NQZ"
-
-    # Define your pipeline
     pipeline = dlt.pipeline(
-        pipeline_name='my_pipeline',
+        pipeline_name='flights_departures',
         destination='filesystem',
-        dataset_name='test_flight_data'
+        dataset_name=f'{bucket_name}/{iata}'
     )
 
-    def download_jsonl(url):
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
-        return response.json()
-
-    # Run the pipeline with the generator we created earlier.
-    load_info = pipeline.run(download_jsonl(url), table_name="users", loader_file_format="parquet")
+    load_info = pipeline.run(
+        download_data(iata), 
+        table_name=f"{prev_date}", 
+        loader_file_format="parquet",
+        write_disposition="append"
+        )
     return load_info
+
 
 def print_world():
     return 'World'
@@ -55,7 +64,7 @@ dag = DAG(
 
 task_to_gcs = PythonOperator(
     task_id = "upload_to_gcs",
-    python_callable=first_dag,
+    python_callable=upload_to_gcs,
     dag=dag
 )
 
