@@ -4,26 +4,26 @@ from airflow.operators.python_operator import PythonOperator
 import requests
 import dlt
 import os
-
-
+import gcsfs
+           
 def upload_to_gcs():
-    bucket_name = "de-project-flight-analyzer"
     iata = "NQZ"
+    bucket_name = "de-project-flight-analyzer"
     prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    fs = gcsfs.GCSFileSystem()
 
-    def download_data(iata=None):
+    def fetch_data():
         url_base = f"http://api.aviationstack.com/v1/flights?access_key=4c9daccbaa0ab0dc63923014205e07c3&dep_iata={iata}"
         offset = 0
         while True:
             url = f"{url_base}&offset={offset}"
-            temp_json = requests.get(url).json()  # Convert response to JSON
-            temp_data = temp_json.get('data', [])  # Extract data from JSON
-            if not temp_data:
+            response = requests.get(url)
+            response.raise_for_status()  # Raises HTTPError for 4xx or 5xx responses
+            temp_json = response.json()  # Extract data from JSON
+            if not temp_json:
                 break
-            yield temp_data
             offset += 100
-
-    os.environ['DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{bucket_name}'
+            yield temp_json
 
     pipeline = dlt.pipeline(
         pipeline_name='flights_departures',
@@ -32,11 +32,12 @@ def upload_to_gcs():
     )
 
     load_info = pipeline.run(
-        download_data(iata), 
+        fetch_data(iata), 
         table_name=f"{prev_date}", 
         loader_file_format="parquet",
         write_disposition="append"
         )
+    
     return load_info
 
 

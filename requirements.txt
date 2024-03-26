@@ -2,3 +2,4 @@ apache-airflow
 datetime
 requests
 dlt
+gcsfs
