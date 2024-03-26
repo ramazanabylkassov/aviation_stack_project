@@ -2,4 +2,3 @@ apache-airflow
 datetime
 requests
 dlt
-os
