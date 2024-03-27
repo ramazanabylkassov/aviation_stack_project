@@ -5,6 +5,7 @@ import requests
 import dlt
 import gcsfs
 import os
+import json
            
 def upload_to_gcs():
     iata = "NQZ"
@@ -31,12 +32,12 @@ def upload_to_gcs():
 
             offset += 100
         
-        return output_json
+        return json.dumps(output_json)
 
     pipeline = dlt.pipeline(
         pipeline_name='flights_departures',
         destination='filesystem',
-        dataset_name=f'{bucket_name}/{iata}'
+        dataset_name=f'{iata}'
     )
 
     load_info = pipeline.run(
