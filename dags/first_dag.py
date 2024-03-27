@@ -19,10 +19,14 @@ def upload_to_gcs():
         while True:
             url = f"{url_base}&offset={offset}"
             response = requests.get(url)
-            response.raise_for_status()  
-            output_json.extend(response["data"])
-            if int(response["pagination"]["count"]) < 100:
+            response.raise_for_status()
+            data = response.json()
+            temp_json = data.get('data', [])
+            output_json.extend(temp_json)
+
+            if int(data["pagination"]["count"]) < 100:
                 break
+
             offset += 100
         
         return output_json
