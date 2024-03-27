@@ -46,8 +46,8 @@ def upload_to_gcs():
         loader_file_format="parquet",
         write_disposition="append"
         )
-    
-    return load_info
+
+    return 'Uploaded to GCS'
 
 def print_world():
     return 'World'
