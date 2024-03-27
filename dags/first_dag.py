@@ -32,7 +32,7 @@ def upload_to_gcs():
 
             offset += 100
         
-        return json.dumps(output_json)
+        return output_json
 
     pipeline = dlt.pipeline(
         pipeline_name='flights_departures',
@@ -83,4 +83,4 @@ task_world = PythonOperator(
 
 task_to_gcs >> task_world 
 
-# here is an update
+# here is an update 2
