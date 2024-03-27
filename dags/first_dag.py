@@ -3,7 +3,6 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 import requests
 import dlt
-import os
 import gcsfs
            
 def upload_to_gcs():
@@ -13,17 +12,20 @@ def upload_to_gcs():
     fs = gcsfs.GCSFileSystem()
 
     def fetch_data():
-        url_base = f"http://api.aviationstack.com/v1/flights?access_key=4c9daccbaa0ab0dc63923014205e07c3&dep_iata={iata}"
+        url_base = f"http://api.aviationstack.com/v1/flights?access_key=e731e10ffd59f5dee0f69b8c26460607&dep_iata={iata}"
         offset = 0
+        output_json = []
+
         while True:
             url = f"{url_base}&offset={offset}"
             response = requests.get(url)
-            response.raise_for_status()  # Raises HTTPError for 4xx or 5xx responses
-            temp_json = response.json()  # Extract data from JSON
-            if not temp_json:
+            response.raise_for_status()  
+            output_json.extend(response["data"])
+            if int(response["pagination"]["count"]) < 100:
                 break
             offset += 100
-            yield temp_json
+        
+        return output_json
 
     pipeline = dlt.pipeline(
         pipeline_name='flights_departures',
@@ -32,7 +34,7 @@ def upload_to_gcs():
     )
 
     load_info = pipeline.run(
-        fetch_data(iata), 
+        fetch_data(), 
         table_name=f"{prev_date}", 
         loader_file_format="parquet",
         write_disposition="append"
@@ -40,11 +42,9 @@ def upload_to_gcs():
     
     return load_info
 
-
 def print_world():
     return 'World'
 
-# Define default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -55,12 +55,11 @@ default_args = {
     'retry_delay': timedelta(minutes=10), 
 }
 
-# Define the DAG
 dag = DAG(
-    'first_dag', # DAG ID
+    'first_dag', 
     default_args=default_args,
     description='first dag with flight api',
-    schedule_interval=timedelta(days=1), # Run once a day
+    schedule_interval=timedelta(days=1), 
 )
 
 task_to_gcs = PythonOperator(
@@ -70,10 +69,9 @@ task_to_gcs = PythonOperator(
 )
 
 task_world = PythonOperator(
-    task_id='print_world', # Task ID
+    task_id='print_world', 
     python_callable=print_world,
     dag=dag,
 )
 
-# Set the task execution order
-task_to_gcs >> task_world # task_hello runs before task_world
+task_to_gcs >> task_world 
