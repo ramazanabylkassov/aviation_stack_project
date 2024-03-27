@@ -4,11 +4,13 @@ from airflow.operators.python_operator import PythonOperator
 import requests
 import dlt
 import gcsfs
+import os
            
 def upload_to_gcs():
     iata = "NQZ"
     bucket_name = "de-project-flight-analyzer"
     prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{bucket_name}'
     fs = gcsfs.GCSFileSystem()
 
     def fetch_data():
