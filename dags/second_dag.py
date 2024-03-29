@@ -34,7 +34,6 @@ def upload_to_bigquery():
         .appName("GCS Access") \
         .config("spark.hadoop.fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem") \
         .config("spark.hadoop.google.cloud.auth.service.account.enable", "true") \
-        .config("spark.hadoop.google.cloud.auth.service.account.json.keyfile", "/Users/ramazanabylkassov/Desktop/Programming & Data science/Projects/aviation_stack_project/GC_creds/de-project-flight-analyzer-3354c85abe73.json") \
         .getOrCreate()
 
     df = spark.read.parquet(f"gs://{bucket_name}/{iata}/{prev_date}/*")

@@ -20,7 +20,7 @@ variable "location" {
 
 variable "bq_dataset_name" {
   description = "My BigQuery dataset name"
-  default     = "flights_dataset"
+  default     = "cities_raw_data"
 }
 
 variable "composer_service_account" {

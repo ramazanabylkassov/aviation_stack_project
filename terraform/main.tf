@@ -75,3 +75,8 @@ resource "google_composer_environment" "test" {
     }
   }
 }
+
+# resource "google_dataproc_cluster" "simplecluster" {
+#   name   = var.project_name
+#   region = "us-central1"
+# }

@@ -44,7 +44,7 @@ def upload_to_gcs():
         fetch_data(), 
         table_name=f"{prev_date}", 
         loader_file_format="parquet",
-        write_disposition="append"
+        write_disposition="replace"
         )
 
     return 'Uploaded to GCS'

@@ -63,13 +63,8 @@ def upload_to_bigquery():
     FROM asd
     WHERE rn = 1
     """)
-    
-    return df_result
 
-#     # Save the data to BigQuery
-#     df_result.write.format('bigquery') \
-#     .option('table', df_result) \
-#     .save()
-
-df_spark = upload_to_bigquery()
-print(df_spark)
+    # Save the data to BigQuery
+    df_result.write.format('bigquery') \
+    .option('table', 'de-project-flight-analyzer.flights_dataset') \
+    .save()
