@@ -43,4 +43,4 @@ api_to_gcs = PythonOperator(
 # )
 
 
-api_to_gcs >> gcs_to_bigquery >> raw_to_datamart
+api_to_gcs
