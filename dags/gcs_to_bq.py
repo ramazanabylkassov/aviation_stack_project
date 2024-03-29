@@ -10,6 +10,8 @@ def upload_to_bigquery():
     bucket_name = "de-project-flight-analyzer"
     iata = "NQZ"
     prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    print(f"prev_date: {prev_date}")
+    prev_date = '_2024_03_08'
     columns = [
         'flight_date',
         'departure.airport',
@@ -91,9 +93,9 @@ default_args = {
 }
 
 dag = DAG(
-    'second_dag', 
+    'gcs_to_bq', 
     default_args=default_args,
-    description='second dag with flight api',
+    description='gcs_to_bq dag',
     schedule_interval=timedelta(days=1), 
 )
 
