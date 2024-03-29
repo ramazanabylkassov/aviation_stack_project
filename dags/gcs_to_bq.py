@@ -33,6 +33,8 @@ def upload_to_bigquery():
     spark = SparkSession.builder \
         .appName("GCS Access") \
         .config("spark.jars.packages", "com.google.cloud.bigdataoss:gcs-connector:hadoop3-2.2.5") \
+        .config("spark.hadoop.fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem") \
+        .config("spark.hadoop.google.cloud.auth.service.account.enable", "true") \
         .getOrCreate()
 
     df = spark.read.parquet(f"gs://{bucket_name}/{iata}/{prev_date}/*")
@@ -72,7 +74,7 @@ def upload_to_bigquery():
 
     # Save the data to BigQuery
     df_result.write.format('bigquery') \
-    .option('table', 'de-project-flight-analyzer.flights_dataset') \
+    .option('table', f'de-project-flight-analyzer.cities_raw_data.{iata}') \
     .save()
 
 def print_world():
