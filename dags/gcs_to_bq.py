@@ -11,7 +11,7 @@ def upload_to_bigquery():
     iata = "NQZ"
     prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     columns = [
-        'flight_date'
+        'flight_date',
         'departure.airport',
         'departure.iata',
         'departure.timezone',
@@ -32,8 +32,7 @@ def upload_to_bigquery():
     
     spark = SparkSession.builder \
         .appName("GCS Access") \
-        .config("spark.hadoop.fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem") \
-        .config("spark.hadoop.google.cloud.auth.service.account.enable", "true") \
+        .config("spark.jars.packages", "com.google.cloud.bigdataoss:gcs-connector:hadoop3-2.2.5") \
         .getOrCreate()
 
     df = spark.read.parquet(f"gs://{bucket_name}/{iata}/{prev_date}/*")
@@ -68,7 +67,7 @@ def upload_to_bigquery():
         CAST(flight.number AS STRING) AS flight_number,
         CAST(flight.iata AS STRING) AS flight_iata
     FROM asd
-    WHERE rn = 1 AND flight_date = {prev_date}
+    WHERE rn = 1 AND flight_date = '{prev_date}'
     """)
 
     # Save the data to BigQuery
