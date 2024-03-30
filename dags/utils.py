@@ -3,7 +3,7 @@ import requests
 import csv
 import gcsfs
 import dlt  # Assuming you have a library named dlt for handling the pipeline
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 def fetch_csv(iata=None):
     API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
@@ -39,9 +39,10 @@ def convert_to_csv(json_data):
     return csv_file
 
 def upload_to_gcs(ds=None, iata=None):
-    yesterday = ds - timedelta(days=1)
+    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
+    yesterday = ds_datetime - timedelta(days=1) 
 
-    print(f"The execution date is: {ds}")
+    print(f"The execution date is: {yesterday}")
 
     bucket_name = "de-project-flight-analyzer"
     # Setting the environment variable at the start of your script/program is usually better
@@ -58,7 +59,7 @@ def upload_to_gcs(ds=None, iata=None):
     if csv_file:
         load_info = pipeline.run(
             csv_file, 
-            table_name=f"{ds}", 
+            table_name=f"{yesterday}", 
             loader_file_format="csv",
             write_disposition="replace"
             )
