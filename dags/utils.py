@@ -4,6 +4,12 @@ import dlt  # Assuming you have a library named dlt for handling the pipeline
 from datetime import datetime, timedelta
 import pandas as pd
 
+def convert_to_csv(json_data):
+    if not json_data:
+        return None  # Handling the case where there is no data
+    df = pd.json_normalize(json_data)
+    return df.to_csv('output.csv', index=False)
+
 def fetch_csv(iata=None):
     API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
     if not API_NQZ_ACCESS_KEY:
@@ -25,15 +31,9 @@ def fetch_csv(iata=None):
 
     return convert_to_csv(output_json)
 
-def convert_to_csv(json_data):
-    if not json_data:
-        return None  # Handling the case where there is no data
-    df = pd.json_normalize(json_data)
-    return df.to_csv('output.csv', index=False)
-
 def upload_to_gcs(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = ds_datetime - timedelta(days=1) 
+    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y-%m-%d')
 
     print(f"The execution date is: {yesterday}")
 
