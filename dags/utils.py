@@ -40,7 +40,7 @@ def convert_to_csv(json_data):
 
 def upload_to_gcs(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime(ds, '%Y_%m_%d') 
+    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d') 
 
     print(f"The execution date is: {yesterday}")
 
