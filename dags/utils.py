@@ -1,9 +1,8 @@
 import os
 import requests
-import csv
-import gcsfs
 import dlt  # Assuming you have a library named dlt for handling the pipeline
 from datetime import datetime, timedelta
+import pandas as pd
 
 def fetch_csv(iata=None):
     API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
@@ -29,14 +28,8 @@ def fetch_csv(iata=None):
 def convert_to_csv(json_data):
     if not json_data:
         return None  # Handling the case where there is no data
-    csv_file = "output.csv"
-    with open(csv_file, 'w', newline='') as file:
-        csv_writer = csv.writer(file)
-        header = json_data[0].keys()
-        csv_writer.writerow(header)
-        for item in json_data:
-            csv_writer.writerow(item.values())
-    return csv_file
+    df = pd.json_normalize(json_data)
+    return df.to_csv('output.csv', index=False)
 
 def upload_to_gcs(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')

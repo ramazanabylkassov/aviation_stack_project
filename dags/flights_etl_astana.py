@@ -13,7 +13,7 @@ default_args = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': timedelta(minutes=5), 
+    'retry_delay': timedelta(minutes=10), 
 }
 
 dag = DAG(
@@ -45,5 +45,6 @@ api_to_gcs = PythonOperator(
 #     dag=dag
 # )
 
+# update for comparison
 
 api_to_gcs
