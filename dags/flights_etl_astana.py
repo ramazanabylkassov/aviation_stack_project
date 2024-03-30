@@ -45,6 +45,4 @@ api_to_gcs = PythonOperator(
 #     dag=dag
 # )
 
-# update 5
-
 api_to_gcs
