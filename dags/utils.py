@@ -24,19 +24,19 @@ def fetch_csv(iata=None):
             break
         offset += 100
 
-    return convert_to_csv(output_json)
+    return output_json
 
-def convert_to_csv(json_data):
-    if not json_data:
-        return None  # Handling the case where there is no data
-    csv_file = "output.csv"
-    with open(csv_file, 'w', newline='') as file:
-        csv_writer = csv.writer(file)
-        header = json_data[0].keys()
-        csv_writer.writerow(header)
-        for item in json_data:
-            csv_writer.writerow(item.values())
-    return csv_file
+# def convert_to_csv(json_data):
+#     if not json_data:
+#         return None  # Handling the case where there is no data
+#     csv_file = "output.csv"
+#     with open(csv_file, 'w', newline='') as file:
+#         csv_writer = csv.writer(file)
+#         header = json_data[0].keys()
+#         csv_writer.writerow(header)
+#         for item in json_data:
+#             csv_writer.writerow(item.values())
+#     return csv_file
 
 def upload_to_gcs(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
@@ -60,7 +60,6 @@ def upload_to_gcs(ds=None, iata=None):
         load_info = pipeline.run(
             csv_file, 
             table_name=f"{yesterday}", 
-            loader_file_format="csv",
             write_disposition="replace"
             )
         print(load_info)
