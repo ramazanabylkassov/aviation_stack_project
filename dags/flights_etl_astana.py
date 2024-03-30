@@ -9,11 +9,11 @@ def print_world():
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 3, 24),
+    'start_date': datetime.now(),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': timedelta(minutes=10), 
+    'retry_delay': timedelta(minutes=5), 
 }
 
 dag = DAG(
@@ -26,7 +26,10 @@ dag = DAG(
 api_to_gcs = PythonOperator(
     task_id = "api_to_gcs",
     python_callable=upload_to_gcs,
-    op_kwargs={'ds': '{{ ds }}', 'iata': 'NQZ'},
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'iata': 'NQZ'
+        },
     dag=dag
 )
 

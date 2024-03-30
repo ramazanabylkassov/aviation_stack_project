@@ -3,6 +3,7 @@ import requests
 import csv
 import gcsfs
 import dlt  # Assuming you have a library named dlt for handling the pipeline
+from datetime import timedelta
 
 def fetch_csv(iata=None):
     API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
@@ -38,6 +39,8 @@ def convert_to_csv(json_data):
     return csv_file
 
 def upload_to_gcs(ds=None, iata=None):
+    yesterday = ds - timedelta(days=1)
+
     print(f"The execution date is: {ds}")
 
     bucket_name = "de-project-flight-analyzer"
