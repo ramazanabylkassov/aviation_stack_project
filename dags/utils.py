@@ -113,7 +113,7 @@ def gcs_to_bigquery(ds=None, iata=None):
 
     if json_file:
         load_info = pipeline.run(
-            json_file, 
+            [json_file], 
             table_name=f'{iata}',
             write_disposition="append",
             )
