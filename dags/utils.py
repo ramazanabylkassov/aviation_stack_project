@@ -3,6 +3,7 @@ import requests
 import dlt
 from datetime import datetime, timedelta
 from google.cloud import storage
+import pandas as pd
 import json
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
@@ -47,7 +48,7 @@ def api_to_gcs(ds=None, iata=None):
         print("No data to upload.")
 
 def gcs_to_bigquery(ds=None, iata=None):
-    # Define your GCS and BigQuery parameters
+    # Define your GCS parameters
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
     bucket_name = 'de-project-flight-analyzer'
@@ -58,23 +59,30 @@ def gcs_to_bigquery(ds=None, iata=None):
     bucket = client.bucket(bucket_name)
 
     blob = bucket.blob(json_file_path)
-    json_string = blob.download_as_text()
-    print(json_string)
+    json_data = json.loads(blob.download_as_text())
+    
+    columns = [
+        'departure.airport',
+        'departure.iata',
+        'departure.timezone',
+        'departure.scheduled',
+        'departure.actual',
+        'departure.delay',
+        'arrival.airport',
+        'arrival.iata',
+        'arrival.timezone',
+        'arrival.scheduled',
+        'arrival.actual',
+        'arrival.delay',
+        'airline.name',
+        'airline.iata',
+        'flight.number',
+        'flight.iata',
+    ]
 
-
-
-
-    # Initialize Google Cloud Storage client
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-
-    # Download JSON file from GCS to local
-    blob = bucket.blob(file_path)
-    print(blob)
-
-
-
-
+    temp_df = pd.json_normalize(json_data)
+    df = temp_df[columns]
+    print(df)
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
