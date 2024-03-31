@@ -116,7 +116,7 @@ def gcs_to_bigquery(ds=None, iata=None):
             yesterday=ds_datetime
             ), 
         table_name=f'{iata}',
-        write_disposition="merge",
+        write_disposition="append",
         )
     print(load_info)
 
