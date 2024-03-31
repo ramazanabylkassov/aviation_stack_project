@@ -79,7 +79,7 @@ def transform_data(json_data=None, yesterday=None):
     df_filtered = df_old[df_old['flight_date'] == yesterday]
 
     # Rename columns by replacing double underscores with single underscores
-    df_filtered.columns = [column.replace('__', '_') for column in old_columns[1:]]
+    df_filtered.columns = [column.replace('__', '_') for column in old_columns]
 
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.drop_duplicates().to_dict(orient='records')  # Assuming you want a list of records
