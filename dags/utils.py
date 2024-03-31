@@ -70,17 +70,18 @@ def transform_data(json_data=None, yesterday=None):
         'airline__name',
         'airline__iata',
     ]
+    
     # Select the desired columns first
     df_old = df[old_columns]
 
     # Apply the filter for 'yesterday' on the 'departure__scheduled' column
-    # Ensure the string slicing is applied row-wise to match the 'yesterday' string
     df_filtered = df_old[df_old['departure__scheduled'].str[:10] == yesterday]
 
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = [column.replace('__', '_') for column in old_columns]
 
-    json_file = df.drop_duplicates().to_dict()
+    # Convert the filtered and renamed DataFrame to a dictionary
+    json_file = df_filtered.drop_duplicates().to_dict(orient='records')  # Assuming you want a list of records
 
     print("Check #4")
 
@@ -128,7 +129,7 @@ def gcs_to_bigquery(ds=None, iata=None):
             yesterday=ds_datetime
             ), 
         table_name=f'{iata}',
-        write_disposition="append",
+        write_disposition="merge",
         )
     print(load_info)
 
