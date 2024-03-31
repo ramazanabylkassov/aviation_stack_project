@@ -69,6 +69,8 @@ def transform_data(json_data=None):
 
     df = pd.json_normalize(json_data)
 
+    print(df)
+
     # Adjust data types
     for column, dtype in flight_dtypes.items():
         df[column] = df[column].astype(dtype)
