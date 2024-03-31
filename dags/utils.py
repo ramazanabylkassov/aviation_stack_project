@@ -61,7 +61,6 @@ def transform_data(json_data=None):
         'flight__iata',
         'departure__airport',
         'departure__iata',
-        'departure__timezone',
         'departure__scheduled',
         'departure__actual',
         'departure__delay',
