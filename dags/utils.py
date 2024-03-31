@@ -47,36 +47,7 @@ def api_to_gcs(ds=None, iata=None):
     else:
         print("No data to upload.")
 
-def gcs_to_bigquery(ds=None, iata=None):
-    # Define your GCS parameters
-    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
-    bucket_name = 'de-project-flight-analyzer'
-    json_file_path = f'{iata}/{iata}_{yesterday}'
-
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blobs = bucket.list_blobs(prefix=json_file_path)
-
-    json_data = [] 
-    
-    for blob in blobs:
-        bytes_data = blob.download_as_bytes()
-        jsonl_string = bytes_data.decode('utf-8')        
-        for line in jsonl_string.strip().split('\n'):
-            temp_data = json.loads(line)
-            # Now you have a json_data dictionary for each line
-            
-            # Here, perform operations on each json_data
-            # For example, normalizing and appending to a pandas DataFrame
-
-            # Example normalization (adjust according to your needs)
-            json_data = json_data.append(temp_data)
-            print(json_data)
-        break
-    else:  # No files found
-        raise FileNotFoundError(f"No files found for prefix {json_file_path}")
-    
+def transform_data(json_data=None):
     # Specify data types and parse_dates
     flight_dtypes = {
         'departure.airport': str,
@@ -104,7 +75,31 @@ def gcs_to_bigquery(ds=None, iata=None):
     for date_column in parse_dates:
         df[date_column] = pd.to_datetime(df[date_column])
 
-    print(df)
+    df_filtered = df[list(flight_dtypes.keys())].drop_duplicates()
+
+
+def gcs_to_bigquery(ds=None, iata=None):
+    # Define your GCS parameters
+    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
+    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
+    bucket_name = 'de-project-flight-analyzer'
+    json_file_path = f'{iata}/{iata}_{yesterday}/'
+
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=json_file_path)
+
+    all_data = []
+
+    for blob in blobs:
+        for line in blob.download_as_text().splitlines():
+            data = json.loads(line)
+            all_data.append(data)
+        transformed_data = transform_data(all_data)
+        print(transformed_data)
+        break
+    else:  # No files found
+        raise FileNotFoundError(f"No files found for prefix {json_file_path}")
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
