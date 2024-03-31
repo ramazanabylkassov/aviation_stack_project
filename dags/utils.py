@@ -52,24 +52,25 @@ def api_to_gcs(ds=None, iata=None):
 def transform_data(json_data=None):
     # Specify data types and parse_dates
     flight_dtypes = {
-        'departure.airport': str,
-        'departure.iata': str,
-        'departure.timezone': str,
-        'departure.delay': 'Int64',
-        'arrival.airport': str,
-        'arrival.iata': str,
-        'arrival.timezone': str,
-        'arrival.delay': 'Int64',
-        'airline.name': str,
-        'airline.iata': str,
-        'flight.number': 'Int64',
-        'flight.iata': str
+        'departure_airport': str,
+        'departure_iata': str,
+        'departure_timezone': str,
+        'departure_delay': 'Int64',
+        'arrival_airport': str,
+        'arrival_iata': str,
+        'arrival_timezone': str,
+        'arrival_delay': 'Int64',
+        'airline_name': str,
+        'airline_iata': str,
+        'flight_number': 'Int64',
+        'flight_iata': str
     }
-    parse_dates = ['departure.scheduled', 'arrival.scheduled', 'departure.actual', 'arrival.actual']
+    parse_dates = ['departure_scheduled', 'arrival_scheduled', 'departure_actual', 'arrival_actual']
 
     df = pd.json_normalize(json_data)
 
-    print(df)
+    for column in df.columns:
+        print(column)
 
     # Adjust data types
     for column, dtype in flight_dtypes.items():
