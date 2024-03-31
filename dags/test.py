@@ -25,7 +25,7 @@ gcs_to_bigquery = PythonOperator(
     python_callable=gcs_to_bigquery,
     op_kwargs={
         'ds': '{{ ds }}', 
-        'iata': 'NQZ'
+        'iata': 'nqz'
         },
     dag=dag
 )
