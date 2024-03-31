@@ -69,8 +69,15 @@ def transform_data(json_data=None, yesterday=None):
         'airline__name',
         'airline__iata',
     ]
-    df = df[old_columns][df['departure__scheduled'][:10] == yesterday]
-    df.columns = [column.replace('__', '_') for column in old_columns]
+    # Select the desired columns first
+    df_old = df[old_columns]
+
+    # Apply the filter for 'yesterday' on the 'departure__scheduled' column
+    # Ensure the string slicing is applied row-wise to match the 'yesterday' string
+    df_filtered = df_old[df_old['departure__scheduled'].str[:10] == yesterday]
+
+    # Rename columns by replacing double underscores with single underscores
+    df_filtered.columns = [column.replace('__', '_') for column in old_columns]
 
     json_file = df.drop_duplicates().to_dict()
     return json_file
