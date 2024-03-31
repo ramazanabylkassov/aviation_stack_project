@@ -49,7 +49,7 @@ def api_to_gcs(ds=None, iata=None):
     else:
         print("No data to upload.")
 
-def transform_data(json_data=None):
+def transform_data(json_data=None, yesterday=None):
     df = pd.json_normalize(json_data)
 
     old_columns = [
@@ -69,12 +69,13 @@ def transform_data(json_data=None):
         'airline__name',
         'airline__iata',
     ]
-    df = df[old_columns]
+    df = df[old_columns][df['departure__scheduled'][:10] == yesterday]
     df.columns = [column.replace('__', '_') for column in old_columns]
 
-    json_file = df.drop_duplicates().to_json()
 
-    for json_line in json_file:
+    json_file = df.drop_duplicates().to_dict(orient='records')
+
+    for json_line in json_file.items():
         yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
@@ -110,9 +111,12 @@ def gcs_to_bigquery(ds=None, iata=None):
     )
 
     load_info = pipeline.run(
-        transform_data(json_data=all_data), 
+        transform_data(
+            json_data=all_data, 
+            yesterday=ds_datetime
+            ), 
         table_name=f'{iata}',
-        write_disposition="append",
+        write_disposition="merge",
         )
     print(load_info)
 
