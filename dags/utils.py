@@ -52,36 +52,33 @@ def api_to_gcs(ds=None, iata=None):
 def transform_data(json_data=None):
     # Specify data types and parse_dates
     flight_dtypes = {
-        'departure_airport': str,
-        'departure_iata': str,
-        'departure_timezone': str,
-        'departure_delay': 'Int64',
-        'arrival_airport': str,
-        'arrival_iata': str,
-        'arrival_timezone': str,
-        'arrival_delay': 'Int64',
-        'airline_name': str,
-        'airline_iata': str,
-        'flight_number': 'Int64',
-        'flight_iata': str
+        'departure__airport': str,
+        'departure__iata': str,
+        'departure__timezone': str,
+        'departure__delay': 'Int64',
+        'arrival__airport': str,
+        'arrival__iata': str,
+        'arrival__timezone': str,
+        'arrival__delay': 'Int64',
+        'airline__name': str,
+        'airline__iata': str,
+        'flight__number': 'Int64',
+        'flight__iata': str
     }
-    parse_dates = ['departure_scheduled', 'arrival_scheduled', 'departure_actual', 'arrival_actual']
+    parse_dates = ['departure__scheduled', 'arrival__scheduled', 'departure__actual', 'arrival__actual']
+    new_columns = sorted([column.replace('__', '_') for column in list(flight_dtypes.keys()) + parse_dates], reverse=True)
 
     df = pd.json_normalize(json_data)
 
-    for column in df.columns:
-        print(column)
-
     # Adjust data types
     for column, dtype in flight_dtypes.items():
-        df[column] = df[column].astype(dtype)
+        df[column.replace('__', '_')] = df[column].astype(dtype)
 
     # Parse dates
     for date_column in parse_dates:
-        df[date_column] = pd.to_datetime(df[date_column])
+        df[date_column.replace('__', '_')] = pd.to_datetime(df[date_column])
 
-    return df[list(flight_dtypes.keys())].drop_duplicates()
-
+    return df[new_columns].drop_duplicates()
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -97,21 +94,10 @@ def gcs_to_bigquery(ds=None, iata=None):
     all_data = []
 
     for blob in blobs:
-                # Download the blob as bytes
+        # Download the blob as bytes
         bytes_data = blob.download_as_bytes()
-
-        # Check if the file is gzip-compressed
-        if bytes_data[:2] == b'\x1f\x8b':  # gzip signature
-            # Use gzip to decompress
-            with gzip.open(io.BytesIO(bytes_data), 'rt', encoding='utf-8') as gzip_file:
-                for line in gzip_file:
-                    data = json.loads(line)
-                    # Perform your data transformation here
-                    all_data.append(data)
-        else:
-            # If not compressed, process normally as UTF-8 text
-            text_data = bytes_data.decode('utf-8')
-            for line in text_data.splitlines():
+        with gzip.open(io.BytesIO(bytes_data), 'rt', encoding='utf-8') as gzip_file:
+            for line in gzip_file:
                 data = json.loads(line)
                 # Perform your data transformation here
                 all_data.append(data)
@@ -120,7 +106,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
     df_filtered = transform_data(json_data=all_data)
-    print(df_filtered)
+    print(df_filtered.shape)
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
