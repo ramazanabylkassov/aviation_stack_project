@@ -57,9 +57,22 @@ def gcs_to_bigquery(ds=None, iata=None):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=json_file_path)
+
+    json_data = [] 
+    
     for blob in blobs:
-        json_string = blob.download_as_text()
-        json_data = json.loads(json_string)
+        bytes_data = blob.download_as_bytes()
+        jsonl_string = bytes_data.decode('utf-8')        
+        for line in jsonl_string.strip().split('\n'):
+            temp_data = json.loads(line)
+            # Now you have a json_data dictionary for each line
+            
+            # Here, perform operations on each json_data
+            # For example, normalizing and appending to a pandas DataFrame
+
+            # Example normalization (adjust according to your needs)
+            json_data = json_data.append(temp_data)
+            print(json_data)
         break
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
