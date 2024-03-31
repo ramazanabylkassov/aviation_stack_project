@@ -52,6 +52,10 @@ def api_to_gcs(ds=None, iata=None):
 def transform_data(json_data=None):
     df = pd.json_normalize(json_data)
     # Specify data types and parse_dates
+
+    for column in df.columns:
+        print(column)
+
     old_columns = [
         'flight__number',
         'flight__iata',
