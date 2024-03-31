@@ -50,35 +50,29 @@ def api_to_gcs(ds=None, iata=None):
         print("No data to upload.")
 
 def transform_data(json_data=None):
-    # Specify data types and parse_dates
-    flight_dtypes = {
-        'departure__airport': str,
-        'departure__iata': str,
-        'departure__timezone': str,
-        'departure__delay': 'Int64',
-        'arrival__airport': str,
-        'arrival__iata': str,
-        'arrival__timezone': str,
-        'arrival__delay': 'Int64',
-        'airline__name': str,
-        'airline__iata': str,
-        'flight__number': 'Int64',
-        'flight__iata': str
-    }
-    parse_dates = ['departure__scheduled', 'arrival__scheduled', 'departure__actual', 'arrival__actual']
-    new_columns = sorted([column.replace('__', '_') for column in list(flight_dtypes.keys()) + parse_dates], reverse=True)
-
     df = pd.json_normalize(json_data)
-
-    # Adjust data types
-    for column, dtype in flight_dtypes.items():
-        df[column.replace('__', '_')] = df[column].astype(dtype)
-
-    # Parse dates
-    for date_column in parse_dates:
-        df[date_column.replace('__', '_')] = pd.to_datetime(df[date_column])
-
-    return df[new_columns].drop_duplicates()
+    # Specify data types and parse_dates
+    old_columns = [
+        'flight__number',
+        'flight__iata',
+        'departure__airport',
+        'departure__iata',
+        'departure__timezone',
+        'departure__scheduled',
+        'departure__actual',
+        'departure__delay',
+        'arrival__airport',
+        'arrival__iata',
+        'arrival__timezone',
+        'arrival__scheduled',  
+        'arrival__actual',
+        'arrival__delay',
+        'airline__name',
+        'airline__iata',
+    ]
+    df = df[old_columns]
+    df.columns = [column.replace('__', '_') for column in old_columns]
+    return df.drop_duplicates().to_json()
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -105,8 +99,24 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    df_filtered = transform_data(json_data=all_data)
-    print(df_filtered.shape)
+    json_file = transform_data(json_data=all_data)
+    
+    # Define your pipeline
+    pipeline = dlt.pipeline(
+        pipeline_name='upload_to_bigquery',
+        destination='bigquery',
+        dataset_name='cities_raw_data'
+    )
+
+    if json_file:
+        load_info = pipeline.run(
+            json_file, 
+            table_name=f'{iata}',
+            write_disposition="append",
+            )
+        print(load_info)
+    else:
+        print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
