@@ -71,6 +71,9 @@ def transform_data(json_data=None):
     ]
     df = df[old_columns]
     df.columns = [column.replace('__', '_') for column in old_columns]
+
+    print(df.drop_duplicates())
+
     return df.drop_duplicates().to_json()
 
 def gcs_to_bigquery(ds=None, iata=None):
