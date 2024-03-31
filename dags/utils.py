@@ -72,11 +72,8 @@ def transform_data(json_data=None, yesterday=None):
     df = df[old_columns][df['departure__scheduled'][:10] == yesterday]
     df.columns = [column.replace('__', '_') for column in old_columns]
 
-    json_file = df.drop_duplicates().to_dict(orient='records')
-
-    for json_line in json_file:
-        print(json_line)
-        yield json_line
+    json_file = df.drop_duplicates().to_dict()
+    return json_file
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
