@@ -52,7 +52,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
     bucket_name = 'de-project-flight-analyzer'
-    json_file_path = f'{iata}/{iata}_{yesterday}/*'
+    json_file_path = f'{iata}/{iata}_{yesterday}/'
 
     client = storage.Client()
     bucket = client.bucket(bucket_name)

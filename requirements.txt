@@ -1,2 +1,3 @@
-apache-airflow
-dlt
+apache-airflow == 2.8.4
+dlt == 0.4.7
+pandas == 2.2.1
