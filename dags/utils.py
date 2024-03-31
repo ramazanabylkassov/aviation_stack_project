@@ -1,3 +1,5 @@
+import gzip
+import io
 import os
 import requests
 import dlt
@@ -75,7 +77,7 @@ def transform_data(json_data=None):
     for date_column in parse_dates:
         df[date_column] = pd.to_datetime(df[date_column])
 
-    df_filtered = df[list(flight_dtypes.keys())].drop_duplicates()
+    return df[list(flight_dtypes.keys())].drop_duplicates()
 
 
 def gcs_to_bigquery(ds=None, iata=None):
@@ -92,14 +94,30 @@ def gcs_to_bigquery(ds=None, iata=None):
     all_data = []
 
     for blob in blobs:
-        for line in blob.download_as_text().splitlines():
-            data = json.loads(line)
-            all_data.append(data)
-        transformed_data = transform_data(all_data)
-        print(transformed_data)
+                # Download the blob as bytes
+        bytes_data = blob.download_as_bytes()
+
+        # Check if the file is gzip-compressed
+        if bytes_data[:2] == b'\x1f\x8b':  # gzip signature
+            # Use gzip to decompress
+            with gzip.open(io.BytesIO(bytes_data), 'rt', encoding='utf-8') as gzip_file:
+                for line in gzip_file:
+                    data = json.loads(line)
+                    # Perform your data transformation here
+                    all_data.append(data)
+        else:
+            # If not compressed, process normally as UTF-8 text
+            text_data = bytes_data.decode('utf-8')
+            for line in text_data.splitlines():
+                data = json.loads(line)
+                # Perform your data transformation here
+                all_data.append(data)
         break
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
+    
+    df_filtered = transform_data(json_data=all_data)
+    print(df_filtered)
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
