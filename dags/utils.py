@@ -85,6 +85,8 @@ def transform_data(json_data=None, yesterday=None):
 
     print("Check #4")
 
+    print(json_file)
+
     return json_file
 
 def gcs_to_bigquery(ds=None, iata=None):
@@ -128,8 +130,7 @@ def gcs_to_bigquery(ds=None, iata=None):
             json_data=all_data, 
             yesterday=ds_datetime
             ), 
-        table_name=f'{iata}',
-        write_disposition="merge",
+        table_name=f'{iata}'
         )
     print(load_info)
 
