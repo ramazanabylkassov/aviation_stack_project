@@ -14,7 +14,7 @@ default_args = {
 }
 
 dag = DAG(
-    'test dag', 
+    'testdag', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval=timedelta(days=1), 
