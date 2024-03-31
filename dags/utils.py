@@ -51,10 +51,6 @@ def api_to_gcs(ds=None, iata=None):
 
 def transform_data(json_data=None):
     df = pd.json_normalize(json_data)
-    # Specify data types and parse_dates
-
-    for column in df.columns:
-        print(column)
 
     old_columns = [
         'flight__number',
@@ -103,6 +99,8 @@ def gcs_to_bigquery(ds=None, iata=None):
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
     json_file = transform_data(json_data=all_data)
+
+    print(json_file)
     
     # Define your pipeline
     pipeline = dlt.pipeline(
@@ -113,7 +111,7 @@ def gcs_to_bigquery(ds=None, iata=None):
 
     if json_file:
         load_info = pipeline.run(
-            [json_file], 
+            json_file, 
             table_name=f'{iata}',
             write_disposition="append",
             )
