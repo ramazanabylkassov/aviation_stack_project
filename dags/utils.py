@@ -54,6 +54,7 @@ def transform_data(json_data=None, yesterday=None):
     df = pd.json_normalize(json_data)
 
     old_columns = [
+        'flight_date',
         'flight__number',
         'flight__iata',
         'departure__airport',
@@ -75,10 +76,10 @@ def transform_data(json_data=None, yesterday=None):
     df_old = df[old_columns]
 
     # Apply the filter for 'yesterday' on the 'departure__scheduled' column
-    df_filtered = df_old[df_old['departure__scheduled'].str[:10] == yesterday]
+    df_filtered = df_old[df_old['flight_date'] == yesterday]
 
     # Rename columns by replacing double underscores with single underscores
-    df_filtered.columns = [column.replace('__', '_') for column in old_columns]
+    df_filtered.columns = [column.replace('__', '_') for column in old_columns[1:]]
 
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.drop_duplicates().to_dict(orient='records')  # Assuming you want a list of records
