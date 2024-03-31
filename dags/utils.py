@@ -3,6 +3,8 @@ import requests
 import dlt
 from datetime import datetime, timedelta
 
+os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
+
 def fetch_csv(iata=None):
     API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
     if not API_NQZ_ACCESS_KEY:
@@ -23,11 +25,9 @@ def fetch_csv(iata=None):
         offset += 100
     return output_file
 
-def upload_to_gcs(ds=None, iata=None):
+def api_to_gcs(ds=None, iata=None):
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d') 
-    bucket_name = "de-project-flight-analyzer"
-    os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{bucket_name}'
+    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
     pipeline = dlt.pipeline(
         pipeline_name='flights_departures',
         destination='filesystem',
@@ -44,3 +44,9 @@ def upload_to_gcs(ds=None, iata=None):
     else:
         print("No data to upload.")
 
+def gcs_to_bigquery(ds=None, iata=None):
+    print('gcs_to_bigquery')
+
+
+def raw_to_datamart(ds=None, iata=None):
+    print('raw_to_datamart')
