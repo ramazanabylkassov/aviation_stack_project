@@ -74,7 +74,7 @@ def transform_data(json_data=None):
 
     json_str = df.drop_duplicates().to_json(orient='records', lines=True)
 
-    for json_line in json_str.split('\n'):
+    for json_line in json_str:
         yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
