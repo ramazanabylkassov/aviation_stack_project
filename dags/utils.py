@@ -54,34 +54,43 @@ def gcs_to_bigquery(ds=None, iata=None):
     bucket_name = 'de-project-flight-analyzer'
     json_file_path = f'{iata}/{iata}_{yesterday}/*'
 
-    # Initialize a Google Cloud Storage client
     client = storage.Client()
     bucket = client.bucket(bucket_name)
-
-    blob = bucket.blob(json_file_path)
-    json_data = json.loads(blob.download_as_text())
+    blobs = bucket.list_blobs(prefix=json_file_path)
+    for blob in blobs:
+        json_string = blob.download_as_text()
+        json_data = json.loads(json_string)
+        break
+    else:  # No files found
+        raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    columns = [
-        'departure.airport',
-        'departure.iata',
-        'departure.timezone',
-        'departure.scheduled',
-        'departure.actual',
-        'departure.delay',
-        'arrival.airport',
-        'arrival.iata',
-        'arrival.timezone',
-        'arrival.scheduled',
-        'arrival.actual',
-        'arrival.delay',
-        'airline.name',
-        'airline.iata',
-        'flight.number',
-        'flight.iata',
-    ]
+    # Specify data types and parse_dates
+    flight_dtypes = {
+        'departure.airport': str,
+        'departure.iata': str,
+        'departure.timezone': str,
+        'departure.delay': 'Int64',
+        'arrival.airport': str,
+        'arrival.iata': str,
+        'arrival.timezone': str,
+        'arrival.delay': 'Int64',
+        'airline.name': str,
+        'airline.iata': str,
+        'flight.number': 'Int64',
+        'flight.iata': str
+    }
+    parse_dates = ['departure.scheduled', 'arrival.scheduled', 'departure.actual', 'arrival.actual']
 
-    temp_df = pd.json_normalize(json_data)
-    df = temp_df[columns]
+    df = pd.json_normalize(json_data)
+
+    # Adjust data types
+    for column, dtype in flight_dtypes.items():
+        df[column] = df[column].astype(dtype)
+
+    # Parse dates
+    for date_column in parse_dates:
+        df[date_column] = pd.to_datetime(df[date_column])
+
     print(df)
 
 def raw_to_datamart(ds=None, iata=None):
