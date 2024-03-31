@@ -80,6 +80,9 @@ def transform_data(json_data=None, yesterday=None):
     df_filtered.columns = [column.replace('__', '_') for column in old_columns]
 
     json_file = df.drop_duplicates().to_dict()
+
+    print(f"AAAAAAAAAA {json_file}")
+
     return json_file
 
 def gcs_to_bigquery(ds=None, iata=None):
