@@ -74,7 +74,8 @@ def transform_data(json_data=None):
 
     json_str = df.drop_duplicates().to_json(orient='records', lines=True)
 
-    return json_str.split('\n')
+    for json_line in json_str.split('\n'):
+        yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -101,10 +102,6 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    json_file = transform_data(json_data=all_data)
-
-    print(json_file)
-    
     # Define your pipeline
     pipeline = dlt.pipeline(
         pipeline_name='upload_to_bigquery',
@@ -112,15 +109,12 @@ def gcs_to_bigquery(ds=None, iata=None):
         dataset_name='cities_raw_data'
     )
 
-    if json_file:
-        load_info = pipeline.run(
-            json_file, 
-            table_name=f'{iata}',
-            write_disposition="append",
-            )
-        print(load_info)
-    else:
-        print("No data to upload.")
+    load_info = pipeline.run(
+        transform_data(json_data=all_data), 
+        table_name=f'{iata}',
+        write_disposition="append",
+        )
+    print(load_info)
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
