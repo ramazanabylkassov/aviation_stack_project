@@ -50,6 +50,7 @@ def api_to_gcs(ds=None, iata=None):
         print("No data to upload.")
 
 def transform_data(json_data=None, yesterday=None):
+    print("Check #3")
     df = pd.json_normalize(json_data)
 
     old_columns = [
@@ -81,7 +82,7 @@ def transform_data(json_data=None, yesterday=None):
 
     json_file = df.drop_duplicates().to_dict()
 
-    print(f"AAAAAAAAAA {json_file}")
+    print("Check #4")
 
     return json_file
 
@@ -110,12 +111,16 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
+    print("check #1")
+
     # Define your pipeline
     pipeline = dlt.pipeline(
         pipeline_name='upload_to_bigquery',
         destination='bigquery',
         dataset_name='cities_raw_data'
     )
+
+    print("Check #2")
 
     load_info = pipeline.run(
         transform_data(
