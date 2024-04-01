@@ -77,7 +77,7 @@ def transform_data(json_data=None, yesterday=None):
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = [column.replace('__', '_') for column in old_columns]
     # Convert the filtered and renamed DataFrame to a dictionary
-    json_file = df_filtered.drop_duplicates().to_dict(orient='records')  # Assuming you want a list of records
+    json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     for json_line in json_file:
         yield json_line
 
@@ -123,7 +123,11 @@ def gcs_to_bigquery(ds=None, iata=None):
             json_to_bq, 
             table_name="users",
             write_disposition="merge",
-            primary_key=('departure_scheduled', 'arrival_airport')
+            primary_key=('departure_scheduled', 'arrival_airport', 'airline__name'),
+            columns={
+                "departure_actual": {"dedup_sort": "desc"},
+                "arrival_actual": {"dedup_sort": "desc"},
+                }
             )
         print(load_info)
     else:
