@@ -88,20 +88,20 @@ def transform_data(json_data=None, yesterday=None):
     
     return json_file, new_columns
 
-    for json_line in json_file:
-        # Convert 'flight_number' to int, handling None correctly
-        flight_number = json_line.get('flight_number')
-        json_line['flight_number'] = int(flight_number) if flight_number is not None else None
+    # for json_line in json_file:
+    #     # Convert 'flight_number' to int, handling None correctly
+    #     flight_number = json_line.get('flight_number')
+    #     json_line['flight_number'] = int(flight_number) if flight_number is not None else None
 
-        # Convert 'departure_delay' to float, handling None correctly
-        departure_delay = json_line.get('departure_delay')
-        json_line['departure_delay'] = float(departure_delay) if departure_delay is not None else None
+    #     # Convert 'departure_delay' to float, handling None correctly
+    #     departure_delay = json_line.get('departure_delay')
+    #     json_line['departure_delay'] = float(departure_delay) if departure_delay is not None else None
 
-        # Convert 'arrival_delay' to float, handling None correctly
-        arrival_delay = json_line.get('arrival_delay')
-        json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
+    #     # Convert 'arrival_delay' to float, handling None correctly
+    #     arrival_delay = json_line.get('arrival_delay')
+    #     json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
 
-        yield json_line
+    #     yield json_line
 
 def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema, location="US"):
     client = bigquery.Client()
@@ -186,10 +186,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    json_to_bq, all_columns = transform_data(
-        json_data=all_data, 
-        yesterday=ds_minus_one
-        )
+    json_to_bq, all_columns = transform_data(json_data=all_data, yesterday=ds_minus_one)
 
     # Define the schema as before
     schema = [
