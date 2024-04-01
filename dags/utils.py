@@ -9,6 +9,7 @@ import pandas as pd
 import json
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
+import numpy as np
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
 
@@ -81,6 +82,7 @@ def transform_data(json_data=None, yesterday=None):
     df_filtered = df_old[df_old['flight_date'] == yesterday]
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = new_columns
+    df_filtered.replace({np.nan: None}, inplace=True)
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     for json_line in json_file:
