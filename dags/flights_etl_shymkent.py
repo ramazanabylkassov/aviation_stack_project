@@ -14,7 +14,7 @@ default_args = {
 }
 
 dag = DAG(
-    'FlightsETLAlmaty', 
+    'FlightsETLShymkent', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval=timedelta(days=1), 
@@ -25,7 +25,7 @@ api_to_gcs = PythonOperator(
     python_callable=api_to_gcs,
     op_kwargs={
         'ds': '{{ ds }}', 
-        'iata': 'ALA'
+        'iata': 'CIT'
         },
     dag=dag
 )
@@ -35,7 +35,7 @@ api_to_gcs = PythonOperator(
 #     python_callable=gcs_to_bigquery,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'ala'
+#         'iata': 'cit'
 #         },
 #     dag=dag
 # )
@@ -45,7 +45,7 @@ api_to_gcs = PythonOperator(
 #     python_callable=raw_to_datamart,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'ala'
+#         'iata': 'cit'
 #         },
 #     dag=dag
 # )

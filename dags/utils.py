@@ -12,10 +12,11 @@ from google.cloud import bigquery
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
 
 def fetch_csv(iata=None):
-    API_NQZ_ACCESS_KEY = os.environ.get('API_NQZ_ACCESS_KEY')
-    if not API_NQZ_ACCESS_KEY:
-        raise ValueError('API_NQZ_ACCESS_KEY not defined')
-    url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_NQZ_ACCESS_KEY}&dep_iata={iata}"
+
+    API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
+    if not API_ACCESS_KEY:
+        raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
+    url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata}"
     offset = 0
     output_file = []
 
@@ -127,7 +128,6 @@ def gcs_to_bigquery(ds=None, iata=None):
             primary_key = (
                 'departure_scheduled',
                 'departure_actual',
-                'arrival_actual',
                 'airline_name'
             )
         )
