@@ -223,7 +223,7 @@ def raw_to_datamart():
     # Define datasets and tables
     source_dataset_id = "flights_raw_data"
     source_table_ids = ["cit", "ala", "nqz"]
-    destination_dataset_id = "flights_clean_data"
+    destination_dataset_id = "flights_datamart"
     destination_table_id = "total_flights_data"
 
     # Query data from source tables
