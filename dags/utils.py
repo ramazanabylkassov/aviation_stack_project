@@ -2,7 +2,6 @@ import gzip
 import io
 import os
 import requests
-import dlt
 from datetime import datetime, timedelta
 from google.cloud import storage
 import pandas as pd
@@ -11,10 +10,9 @@ from google.cloud import bigquery
 from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
 
-os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
+os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
 
 def fetch_csv(iata=None):
-
     API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
     if not API_ACCESS_KEY:
         raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
@@ -88,22 +86,7 @@ def transform_data(json_data=None, yesterday=None, unique_key=None):
     
     return json_file, new_columns
 
-    # for json_line in json_file:
-    #     # Convert 'flight_number' to int, handling None correctly
-    #     flight_number = json_line.get('flight_number')
-    #     json_line['flight_number'] = int(flight_number) if flight_number is not None else None
-
-    #     # Convert 'departure_delay' to float, handling None correctly
-    #     departure_delay = json_line.get('departure_delay')
-    #     json_line['departure_delay'] = float(departure_delay) if departure_delay is not None else None
-
-    #     # Convert 'arrival_delay' to float, handling None correctly
-    #     arrival_delay = json_line.get('arrival_delay')
-    #     json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
-
-    #     yield json_line
-
-def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema, location="US"):
+def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
     client = bigquery.Client()
 
     table_full_id = f"{dataset_id}.{temp_table_id}"
@@ -225,15 +208,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         table = bigquery.Table(full_table_id, schema=schema)
         bigquery_client.create_table(table)  # This creates the table
         print(f"Table {full_table_id} created.")
-
-    
-    # errors = bigquery_client.insert_rows_json(f"{dataset_id}.{table_id}", json_to_bq)
-    # if errors == []:
-    #     print("New rows have been added.")
-    # else:
-    #     print("Encountered errors while inserting rows: {}".format(errors))
-
-    # Load JSON data into the temporary table
+        
     temp_table_id = 'temp_table_for_merging'
     load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
 
@@ -264,4 +239,3 @@ def raw_to_datamart(ds=None, iata=None):
     query_job.result()
 
     print("Query completed. The data has been transformed and stored in project.dataset.new_table.")
-    

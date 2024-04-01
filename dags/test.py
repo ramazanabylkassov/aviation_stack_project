@@ -20,9 +20,9 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
-gcs_to_bigquery = PythonOperator(
-    task_id = "gcs_to_bigquery",
-    python_callable=gcs_to_bigquery,
+raw_to_datamart = PythonOperator(
+    task_id = "raw_to_datamart",
+    python_callable=raw_to_datamart,
     op_kwargs={
         'ds': '{{ ds }}', 
         'iata': 'nqz'
@@ -30,6 +30,6 @@ gcs_to_bigquery = PythonOperator(
     dag=dag
 )
 
-gcs_to_bigquery 
+raw_to_datamart 
 
 # Update 33

@@ -165,4 +165,8 @@ terraform/terraform.tfstate.backup
 terraform/.terraform.lock.hcl
 terraform/.terraform
 .venv/
-dags/dag_demo.py 
+.bashrc
+.ipynb_checkpoints
+Untitled.ipynb
+output.csv
+test.py
