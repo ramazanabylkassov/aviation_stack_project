@@ -52,6 +52,7 @@ def api_to_gcs(ds=None, iata=None):
 def transform_data(json_data=None, yesterday=None):
     print("Check #3")
     df = pd.json_normalize(json_data)
+    yesterday = yesterday.strftime('%Y_%m_%d')
 
     old_columns = [
         'flight_date',
@@ -130,14 +131,19 @@ def gcs_to_bigquery(ds=None, iata=None):
 
     print("Check #2")
 
-    load_info = pipeline.run(
-        transform_data(
-            json_data=all_data, 
-            yesterday=ds_minus_one
-            ), 
-        table_name=f'{iata}'
+    json_to_bq = transform_data(
+        json_data=all_data, 
+        yesterday=ds_minus_one
         )
-    print(load_info)
+    
+    if json_to_bq:
+        load_info = pipeline.run(
+            json_to_bq,
+            table_name=f'{iata}'
+            )
+        print(load_info)
+    else:
+        print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
     print('raw_to_datamart')
