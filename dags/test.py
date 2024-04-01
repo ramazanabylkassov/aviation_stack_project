@@ -23,10 +23,6 @@ dag = DAG(
 raw_to_datamart = PythonOperator(
     task_id = "raw_to_datamart",
     python_callable=raw_to_datamart,
-    op_kwargs={
-        'ds': '{{ ds }}', 
-        'iata': 'nqz'
-        },
     dag=dag
 )
 

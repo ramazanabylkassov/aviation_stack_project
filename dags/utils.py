@@ -198,7 +198,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     ]
 
     bigquery_client = bigquery.Client()
-    dataset_id = f'{bucket_name}.cities_raw_data'
+    dataset_id = f'{bucket_name}.flights_raw_data'
     main_table_id = f'{iata}'
     full_table_id = f"{dataset_id}.{main_table_id}"
     # # Try to fetch the table, and create it if it doesn't exist
@@ -216,27 +216,23 @@ def gcs_to_bigquery(ds=None, iata=None):
     # Merge the temporary table into the main table
     merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns)
 
-def raw_to_datamart(ds=None, iata=None):
-    # Initialize a BigQuery client
+def raw_to_datamart():
+    # Initialize BigQuery client
     client = bigquery.Client()
 
-    # Define your SQL query for data transformation
-    # This is a simple example that creates a new table with transformed data
-    # Replace this with your actual data transformation query
-    query = """
-        CREATE OR REPLACE TABLE `project.dataset.new_table` AS
-        SELECT 
-            column1, 
-            column2,
-            column1 * column2 AS column3  # An example transformation
-        FROM 
-            `project.dataset.original_table`
-    """
+    # Define datasets and tables
+    source_dataset_id = "flights_raw_data"
+    source_table_ids = ["cit", "ala", "nqz"]
+    destination_dataset_id = "flights_clean_data"
+    destination_table_id = "total_flights_data"
 
-    # Run the query
-    query_job = client.query(query)
+    # Query data from source tables
+    combined_data = pd.concat([client.query(f"SELECT * FROM `{source_dataset_id}.{table_id}`").to_dataframe() for table_id in source_table_ids])
 
-    # Wait for the query to finish
-    query_job.result()
+    # Create or replace table in destination dataset
+    destination_table_ref = client.dataset(destination_dataset_id).table(destination_table_id)
+    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")  # Replace the table if it exists
+    job = client.load_table_from_dataframe(combined_data, destination_table_ref, job_config=job_config)
+    job.result()  # Wait for job completion
 
-    print("Query completed. The data has been transformed and stored in project.dataset.new_table.")
+    print(f"Table {destination_dataset_id}.{destination_table_id} created or replaced with data from source tables.")
