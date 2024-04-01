@@ -146,14 +146,8 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
 
     merge_sql = f"""
-    WITH cte AS (
-        SELECT *,
-            ROW_NUMBER() OVER (PARTITION BY `{', '.join(unique_key_columns)}` ORDER BY departure_actual DESC) as rn
-        FROM `{dataset_id}.{temp_table_id}`
-    )
     MERGE `{dataset_id}.{main_table_id}` T
-    USING cte S
-    WHERE rn = 1
+    USING `{dataset_id}.{temp_table_id}` S
     ON {on_clause}
     WHEN MATCHED THEN
         UPDATE SET {set_clause}
