@@ -85,8 +85,8 @@ def transform_data(json_data=None, yesterday=None):
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     for json_line in json_file:
         # Assuming json_line is a dictionary representing your data
-        json_line['flight_number'] = int(json_line.get('flight_number', 0))
-        json_line['departure_delay'] = int(json_line.get('departure_delay', 0))
+        json_line['flight_number'] = int(json_line.get('flight_number', 0.0))
+        json_line['departure_delay'] = int(json_line.get('departure_delay', 0.0))
         # Repeat for any other INT64 fields
         yield json_line
 
@@ -132,13 +132,13 @@ def gcs_to_bigquery(ds=None, iata=None):
         bigquery.SchemaField("departure_iata", "STRING"),
         bigquery.SchemaField("departure_scheduled", "TIMESTAMP"),
         bigquery.SchemaField("departure_actual", "TIMESTAMP"),
-        bigquery.SchemaField("departure_delay", "INT64"),
+        bigquery.SchemaField("departure_delay", "FLOAT64"),
         bigquery.SchemaField("arrival_airport", "STRING"),
         bigquery.SchemaField("arrival_iata", "STRING"),
         bigquery.SchemaField("arrival_timezone", "STRING"),
         bigquery.SchemaField("arrival_scheduled", "TIMESTAMP"),
         bigquery.SchemaField("arrival_actual", "TIMESTAMP"),
-        bigquery.SchemaField("arrival_delay", "INT64"),
+        bigquery.SchemaField("arrival_delay", "FLOAT64"),
         bigquery.SchemaField("airline_name", "STRING"),
         bigquery.SchemaField("airline_iata", "STRING")
     ]
