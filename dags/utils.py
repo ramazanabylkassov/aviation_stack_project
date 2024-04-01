@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from google.cloud import storage
 import pandas as pd
 import json
+from google.cloud import bigquery
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
 
@@ -122,12 +123,40 @@ def gcs_to_bigquery(ds=None, iata=None):
         load_info = pipeline.run(
             json_to_bq, 
             table_name="users",
-            write_disposition="append"
+            write_disposition="merge",
+            primary_key = (
+                'departure__scheduled',
+                'departure__actual',
+                'arrival__actual',
+                'airline__name'
             )
+        )
         print(load_info)
     else:
         print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
+    # Initialize a BigQuery client
+    client = bigquery.Client()
+
+    # Define your SQL query for data transformation
+    # This is a simple example that creates a new table with transformed data
+    # Replace this with your actual data transformation query
+    query = """
+        CREATE OR REPLACE TABLE `project.dataset.new_table` AS
+        SELECT 
+            column1, 
+            column2,
+            column1 * column2 AS column3  # An example transformation
+        FROM 
+            `project.dataset.original_table`
+    """
+
+    # Run the query
+    query_job = client.query(query)
+
+    # Wait for the query to finish
+    query_job.result()
+
+    print("Query completed. The data has been transformed and stored in project.dataset.new_table.")
     
-    ...
