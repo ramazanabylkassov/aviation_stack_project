@@ -114,17 +114,21 @@ def gcs_to_bigquery(ds=None, iata=None):
         destination='bigquery',
         dataset_name='cities_raw_data'
     )
-
+    
+    print('Check 1')
+    
     json_to_bq = transform_data(
         json_data=all_data, 
         yesterday=ds_minus_one
         )
     
+    print(f'{json_to_bq}')
+
     if json_to_bq:
         load_info = pipeline.run(
             json_to_bq, 
             table_name=f"{iata}",
-            write_disposition="merge"
+            write_disposition="append"
         )
         print(load_info)
     else:
