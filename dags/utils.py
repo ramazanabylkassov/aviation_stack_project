@@ -145,7 +145,7 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     print(f"Merge completed. Temporary data merged into {main_table_id}.")
 
     # Clear the temporary table
-    clear_temp_table_sql = f"DELETE FROM `{dataset_id}.{temp_table_id}` WHERE TRUE"
+    clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
     clear_job = client.query(clear_temp_table_sql)
     clear_job.result()
 
@@ -210,7 +210,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         bigquery_client.create_table(table)  # This creates the table
         print(f"Table {full_table_id} created.")
         
-    temp_table_id = 'temp_table_for_merging'
+    temp_table_id = f'temp_table_{iata}'
     load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
 
     # Merge the temporary table into the main table
