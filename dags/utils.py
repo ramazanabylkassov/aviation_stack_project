@@ -8,7 +8,7 @@ from google.cloud import storage
 import pandas as pd
 import json
 from google.cloud import bigquery
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
@@ -98,24 +98,34 @@ def transform_data(json_data=None, yesterday=None):
         arrival_delay = json_line.get('arrival_delay')
         json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
 
-        airline__name = json_line.get('airline__name')
-        json_line['airline__name'] = str(airline__name) if airline__name is not None else None
-
         yield json_line
 
 def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
     client = bigquery.Client()
-
+    
+    table_full_id = f"{dataset_id}.{temp_table_id}"
     job_config = bigquery.LoadJobConfig(schema=schema)
+    
+    # Check if table exists to avoid unintentional overwrites
+    try:
+        client.get_table(table_full_id)
+        print(f"Table {temp_table_id} already exists. Consider handling this case appropriately.")
+    except GoogleAPIError as e:
+        print(f"Error checking for table existence: {e}")
+        return
+    except NotFound:
+        print(f"Table {temp_table_id} does not exist. Proceeding with loading data.")
 
-    load_job = client.load_table_from_json(
-        json_data,
-        f"{dataset_id}.{temp_table_id}",
-        job_config=job_config
-    )
-
-    load_job.result()  # Wait for the job to complete
-    print(f"Data loaded into temporary table {temp_table_id}.")
+    try:
+        load_job = client.load_table_from_json(
+            json_data,
+            table_full_id,
+            job_config=job_config
+        )
+        load_job.result()  # Wait for the job to complete
+        print(f"Data loaded into temporary table {temp_table_id}.")
+    except GoogleAPIError as e:
+        print(f"Failed to load data into {temp_table_id}: {e}")
 
 def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns):
     client = bigquery.Client()
@@ -213,28 +223,6 @@ def gcs_to_bigquery(ds=None, iata=None):
     # Merge the temporary table into the main table
     unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
     merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns)
-
-    # pipeline = dlt.pipeline(
-    #     pipeline_name='load to bq incrementally',
-    #     destination='bigquery',
-    #     dataset_name='cities_raw_data'
-    # )
-
-    # if json_to_bq:
-    #     load_info = pipeline.run(
-    #         json_to_bq, 
-    #         table_name=f"{iata}",
-    #         write_disposition="merge",
-    #         primary_key = (
-    #             'departure_scheduled',
-    #             'departure_actual',
-    #             'arrival_airport',
-    #             'arrival_actual'
-    #         )
-    #     )
-    #     print(load_info)
-    # else:
-    #     print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
     # Initialize a BigQuery client
