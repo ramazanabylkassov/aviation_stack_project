@@ -125,10 +125,10 @@ def gcs_to_bigquery(ds=None, iata=None):
             table_name="users",
             write_disposition="merge",
             primary_key = (
-                'departure__scheduled',
-                'departure__actual',
-                'arrival__actual',
-                'airline__name'
+                'departure_scheduled',
+                'departure_actual',
+                'arrival_actual',
+                'airline_name'
             )
         )
         print(load_info)

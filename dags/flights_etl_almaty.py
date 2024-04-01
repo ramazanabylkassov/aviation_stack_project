@@ -25,20 +25,20 @@ api_to_gcs = PythonOperator(
     python_callable=api_to_gcs,
     op_kwargs={
         'ds': '{{ ds }}', 
-        'iata': 'NQZ'
+        'iata': 'ALA'
         },
     dag=dag
 )
 
-# gcs_to_bigquery = PythonOperator(
-#     task_id = "gcs_to_bigquery",
-#     python_callable=gcs_to_bigquery,
-#     op_kwargs={
-#         'ds': '{{ ds }}', 
-#         'iata': 'nqz'
-#         },
-#     dag=dag
-# )
+gcs_to_bigquery = PythonOperator(
+    task_id = "gcs_to_bigquery",
+    python_callable=gcs_to_bigquery,
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'iata': 'ALA'
+        },
+    dag=dag
+)
 
 # raw_to_datamart = PythonOperator(
 #     task_id = "raw_to_datamart",
@@ -51,5 +51,4 @@ api_to_gcs = PythonOperator(
 # )
 
 api_to_gcs 
-# >> gcs_to_bigquery
-#  >> raw_to_datamart
+# >> gcs_to_bigquery >> raw_to_datamart
