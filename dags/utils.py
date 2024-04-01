@@ -40,7 +40,7 @@ def api_to_gcs(ds=None, iata=None):
         destination='filesystem',
         dataset_name=f'{iata}'
     )
-    json_file = fetch_csv(iata=iata)
+    json_file = fetch_csv(iata=iata.upper())
     if json_file:
         load_info = pipeline.run(
             json_file, 

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 
+iata='nqz'
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -25,7 +27,7 @@ api_to_gcs = PythonOperator(
     python_callable=api_to_gcs,
     op_kwargs={
         'ds': '{{ ds }}', 
-        'iata': 'NQZ'
+        'iata': f'{iata}'
         },
     dag=dag
 )
@@ -35,7 +37,7 @@ api_to_gcs = PythonOperator(
 #     python_callable=gcs_to_bigquery,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'nqz'
+#         'iata': f'{iata}'
 #         },
 #     dag=dag
 # )
@@ -45,7 +47,7 @@ api_to_gcs = PythonOperator(
 #     python_callable=raw_to_datamart,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'NQZ'
+#         'iata': f'{iata}'
 #         },
 #     dag=dag
 # )

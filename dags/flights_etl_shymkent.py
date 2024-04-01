@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 
+iata='cit'
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -14,7 +16,7 @@ default_args = {
 }
 
 dag = DAG(
-    'FlightsETLShymkent', 
+    'FlightsETLAstana', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval=timedelta(days=1), 
@@ -25,7 +27,7 @@ api_to_gcs = PythonOperator(
     python_callable=api_to_gcs,
     op_kwargs={
         'ds': '{{ ds }}', 
-        'iata': 'CIT'
+        'iata': f'{iata}'
         },
     dag=dag
 )
@@ -35,7 +37,7 @@ api_to_gcs = PythonOperator(
 #     python_callable=gcs_to_bigquery,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'cit'
+#         'iata': f'{iata}'
 #         },
 #     dag=dag
 # )
@@ -45,10 +47,11 @@ api_to_gcs = PythonOperator(
 #     python_callable=raw_to_datamart,
 #     op_kwargs={
 #         'ds': '{{ ds }}', 
-#         'iata': 'cit'
+#         'iata': f'{iata}'
 #         },
 #     dag=dag
 # )
 
 api_to_gcs 
-# >> gcs_to_bigquery >> raw_to_datamart
+# >> gcs_to_bigquery
+#  >> raw_to_datamart
