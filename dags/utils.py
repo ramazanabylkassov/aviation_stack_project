@@ -75,6 +75,10 @@ def transform_data(json_data=None, yesterday=None):
     # Select the desired columns first
     df_old = df[old_columns]
 
+    print('Table head:')
+    print(df_old[['flight_date', 'flight__number', 'flight__iata']].head())
+    print(f'Yesterday was" {yesterday}')
+
     # Apply the filter for 'yesterday' on the 'departure__scheduled' column
     df_filtered = df_old[df_old['flight_date'] == yesterday]
 
