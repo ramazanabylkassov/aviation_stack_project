@@ -124,12 +124,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         load_info = pipeline.run(
             json_to_bq, 
             table_name="users",
-            write_disposition="merge",
-            primary_key = (
-                'departure_scheduled',
-                'departure_actual',
-                'airline_name'
-            )
+            write_disposition="merge"
         )
         print(load_info)
     else:
