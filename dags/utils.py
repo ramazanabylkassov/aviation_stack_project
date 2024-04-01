@@ -85,8 +85,9 @@ def transform_data(json_data=None, yesterday=None):
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     for json_line in json_file:
         # Assuming json_line is a dictionary representing your data
-        json_line['flight_number'] = int(json_line.get('flight_number', 0.0))
-        json_line['departure_delay'] = int(json_line.get('departure_delay', 0.0))
+        json_line['flight_number'] = int(json_line.get('flight_number', 0))
+        json_line['departure_delay'] = float(json_line.get('departure_delay', 0.0))
+        json_line['arrival_delay'] = float(json_line.get('arrival_delay', 0.0))
         # Repeat for any other INT64 fields
         yield json_line
 
