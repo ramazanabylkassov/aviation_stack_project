@@ -96,8 +96,8 @@ def transform_data(json_data=None, yesterday=None):
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
-    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
+    ds_minus_one = datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)
+    yesterday = ds_minus_one.strftime('%Y_%m_%d')
     bucket_name = 'de-project-flight-analyzer'
     json_file_path = f'{iata}/{iata}_{yesterday}/'
 
@@ -133,7 +133,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     load_info = pipeline.run(
         transform_data(
             json_data=all_data, 
-            yesterday=ds_datetime
+            yesterday=ds_minus_one
             ), 
         table_name=f'{iata}'
         )
