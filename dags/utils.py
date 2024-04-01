@@ -126,7 +126,7 @@ def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema, locati
     try:
         # Perform the data load
         load_job = client.load_table_from_json(
-            json_data=json_data,
+            json_data,
             destination=table_ref,
             job_config=job_config
         )
