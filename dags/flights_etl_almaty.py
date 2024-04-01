@@ -16,7 +16,7 @@ default_args = {
 }
 
 dag = DAG(
-    'FlightsETLAstana', 
+    'FlightsETLAlmaty', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval=timedelta(days=1), 
