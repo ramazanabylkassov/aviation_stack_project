@@ -161,7 +161,7 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     print(f"Merge completed. Temporary data merged into {main_table_id}.")
 
     # Clear the temporary table
-    clear_temp_table_sql = f"DELETE FROM `{dataset_id}.{temp_table_id}`"
+    clear_temp_table_sql = f"DELETE FROM `{dataset_id}.{temp_table_id}` WHERE TRUE"
     clear_job = client.query(clear_temp_table_sql)
     clear_job.result()
 
