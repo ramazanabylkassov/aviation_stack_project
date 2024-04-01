@@ -130,63 +130,61 @@ def gcs_to_bigquery(ds=None, iata=None):
         yesterday=ds_minus_one
         )
 
-    bigquery_client = bigquery.Client()
-    dataset_id = f'{bucket_name}.cities_raw_data'
-    table_id = f'{iata}'
-    full_table_id = f"{dataset_id}.{table_id}"
-    schema = [
-        bigquery.SchemaField("flight_date", "DATE"),
-        bigquery.SchemaField("flight_number", "INT64"),
-        bigquery.SchemaField("flight_iata", "STRING"),
-        bigquery.SchemaField("departure_airport", "STRING"),
-        bigquery.SchemaField("departure_iata", "STRING"),
-        bigquery.SchemaField("departure_scheduled", "TIMESTAMP"),
-        bigquery.SchemaField("departure_actual", "TIMESTAMP"),
-        bigquery.SchemaField("departure_delay", "FLOAT64"),
-        bigquery.SchemaField("arrival_airport", "STRING"),
-        bigquery.SchemaField("arrival_iata", "STRING"),
-        bigquery.SchemaField("arrival_timezone", "STRING"),
-        bigquery.SchemaField("arrival_scheduled", "TIMESTAMP"),
-        bigquery.SchemaField("arrival_actual", "TIMESTAMP"),
-        bigquery.SchemaField("arrival_delay", "FLOAT64"),
-        bigquery.SchemaField("airline_name", "STRING"),
-        bigquery.SchemaField("airline_iata", "STRING")
-    ]
-    table = bigquery.Table(f"{dataset_id}.{table_id}", schema=schema)
-
-    # Try to fetch the table, and create it if it doesn't exist
-    try:
-        bigquery_client.get_table(full_table_id)  # This checks if the table exists
-        print(f"Table {full_table_id} already exists.")
-    except NotFound:
-        # Define the schema as before
-        schema = [
-            # Your schema definition here
-        ]
-        table = bigquery.Table(full_table_id, schema=schema)
-        bigquery_client.create_table(table)  # This creates the table
-        print(f"Table {full_table_id} created.")
-    errors = bigquery_client.insert_rows_json(f"{dataset_id}.{table_id}", json_to_bq)
-    if errors == []:
-        print("New rows have been added.")
-    else:
-        print("Encountered errors while inserting rows: {}".format(errors))
-
-    # pipeline = dlt.pipeline(
-    #     pipeline_name='upload_to_bq',
-    #     destination='bigquery',
-    #     dataset_name='cities_raw_data'
-    # )
-
-    # if json_to_bq:
-    #     load_info = pipeline.run(
-    #         json_to_bq, 
-    #         table_name=f"{iata}",
-    #         write_disposition="append"
-    #     )
-    #     print(load_info)
+    # bigquery_client = bigquery.Client()
+    # dataset_id = f'{bucket_name}.cities_raw_data'
+    # table_id = f'{iata}'
+    # full_table_id = f"{dataset_id}.{table_id}"
+    # schema = [
+    #     bigquery.SchemaField("flight_date", "DATE"),
+    #     bigquery.SchemaField("flight_number", "INT64"),
+    #     bigquery.SchemaField("flight_iata", "STRING"),
+    #     bigquery.SchemaField("departure_airport", "STRING"),
+    #     bigquery.SchemaField("departure_iata", "STRING"),
+    #     bigquery.SchemaField("departure_scheduled", "TIMESTAMP"),
+    #     bigquery.SchemaField("departure_actual", "TIMESTAMP"),
+    #     bigquery.SchemaField("departure_delay", "FLOAT64"),
+    #     bigquery.SchemaField("arrival_airport", "STRING"),
+    #     bigquery.SchemaField("arrival_iata", "STRING"),
+    #     bigquery.SchemaField("arrival_timezone", "STRING"),
+    #     bigquery.SchemaField("arrival_scheduled", "TIMESTAMP"),
+    #     bigquery.SchemaField("arrival_actual", "TIMESTAMP"),
+    #     bigquery.SchemaField("arrival_delay", "FLOAT64"),
+    #     bigquery.SchemaField("airline_name", "STRING"),
+    #     bigquery.SchemaField("airline_iata", "STRING")
+    # ]
+    # # Try to fetch the table, and create it if it doesn't exist
+    # try:
+    #     bigquery_client.get_table(full_table_id)  # This checks if the table exists
+    #     print(f"Table {full_table_id} already exists.")
+    # except NotFound:
+    #     # Define the schema as before
+    #     schema = [
+    #         # Your schema definition here
+    #     ]
+    #     table = bigquery.Table(full_table_id, schema=schema)
+    #     bigquery_client.create_table(table)  # This creates the table
+    #     print(f"Table {full_table_id} created.")
+    # errors = bigquery_client.insert_rows_json(f"{dataset_id}.{table_id}", json_to_bq)
+    # if errors == []:
+    #     print("New rows have been added.")
     # else:
-    #     print("No data to upload.")
+    #     print("Encountered errors while inserting rows: {}".format(errors))
+
+    pipeline = dlt.pipeline(
+        pipeline_name='upload_to_bq',
+        destination='bigquery',
+        dataset_name='cities_raw_data'
+    )
+
+    if json_to_bq:
+        load_info = pipeline.run(
+            json_to_bq, 
+            table_name=f"{iata}",
+            write_disposition="append"
+        )
+        print(load_info)
+    else:
+        print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
     # Initialize a BigQuery client
