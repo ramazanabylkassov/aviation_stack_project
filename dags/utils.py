@@ -50,10 +50,8 @@ def api_to_gcs(ds=None, iata=None):
         print("No data to upload.")
 
 def transform_data(json_data=None, yesterday=None):
-    print("Check #3")
     df = pd.json_normalize(json_data)
     yesterday = yesterday.strftime('%Y-%m-%d')
-
     old_columns = [
         'flight_date',
         'flight__number',
@@ -72,28 +70,16 @@ def transform_data(json_data=None, yesterday=None):
         'airline__name',
         'airline__iata',
     ]
-    
     # Select the desired columns first
     df_old = df[old_columns]
-
-    print('Table head:')
-    print(df_old[['flight_date', 'flight__number', 'flight__iata']].head())
-    print(f'Yesterday was" {yesterday}')
-
     # Apply the filter for 'yesterday' on the 'departure__scheduled' column
     df_filtered = df_old[df_old['flight_date'] == yesterday]
-
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = [column.replace('__', '_') for column in old_columns]
-
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.drop_duplicates().to_dict(orient='records')  # Assuming you want a list of records
-
-    print("Check #4")
-
-    print(json_file)
-
-    return json_file
+    for json_line in json_file:
+        yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -119,17 +105,13 @@ def gcs_to_bigquery(ds=None, iata=None):
         break
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
-    
-    print("check #1")
 
     # Define your pipeline
     pipeline = dlt.pipeline(
-        pipeline_name='upload_to_bigquery',
+        pipeline_name='upload_to_bq',
         destination='bigquery',
-        dataset_name='cities_raw_data'
+        dataset_name=f'{bucket_name}'
     )
-
-    print("Check #2")
 
     json_to_bq = transform_data(
         json_data=all_data, 
@@ -137,10 +119,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         )
     
     if json_to_bq:
-        load_info = pipeline.run(
-            json_to_bq,
-            table_name=f'{iata}'
-            )
+        load_info = pipeline.run(json_to_bq, table_name="users")
         print(load_info)
     else:
         print("No data to upload.")
