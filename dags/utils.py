@@ -168,7 +168,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     #     print("Encountered errors while inserting rows: {}".format(errors))
 
     pipeline = dlt.pipeline(
-        pipeline_name='upload_to_bq',
+        pipeline_name='load to bq incrementally',
         destination='bigquery',
         dataset_name='cities_raw_data'
     )
