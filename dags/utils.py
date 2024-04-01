@@ -53,7 +53,7 @@ def api_to_gcs(ds=None, iata=None):
     else:
         print("No data to upload.")
 
-def transform_data(json_data=None, yesterday=None):
+def transform_data(json_data=None, yesterday=None, unique_key=None):
     df = pd.json_normalize(json_data)
     yesterday = yesterday.strftime('%Y-%m-%d')
     old_columns = [
@@ -82,7 +82,7 @@ def transform_data(json_data=None, yesterday=None):
     df_filtered = df_old[df_old['flight_date'] == yesterday]
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = new_columns
-    df_filtered = df_filtered.replace({np.nan: None})
+    df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key)
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     
@@ -146,8 +146,14 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
 
     merge_sql = f"""
+    WITH cte AS (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY `{', '.join(unique_key_columns)}` ORDER BY departure_actual DESC) as rn
+        FROM `{dataset_id}.{temp_table_id}`
+    )
     MERGE `{dataset_id}.{main_table_id}` T
-    USING `{dataset_id}.{temp_table_id}` S
+    USING cte S
+    WHERE rn = 1
     ON {on_clause}
     WHEN MATCHED THEN
         UPDATE SET {set_clause}
@@ -167,6 +173,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     yesterday = ds_minus_one.strftime('%Y_%m_%d')
     bucket_name = 'de-project-flight-analyzer'
     json_file_path = f'{iata}/{iata}_{yesterday}/'
+    unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
 
     client = storage.Client()
     bucket = client.bucket(bucket_name)
@@ -186,7 +193,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    json_to_bq, all_columns = transform_data(json_data=all_data, yesterday=ds_minus_one)
+    json_to_bq, all_columns = transform_data(json_data=all_data, yesterday=ds_minus_one, unique_key=unique_key_columns)
 
     # Define the schema as before
     schema = [
@@ -233,7 +240,6 @@ def gcs_to_bigquery(ds=None, iata=None):
     load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
 
     # Merge the temporary table into the main table
-    unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
     merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns)
 
 def raw_to_datamart(ds=None, iata=None):
