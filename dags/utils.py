@@ -124,9 +124,7 @@ def gcs_to_bigquery(ds=None, iata=None):
             table_name="users",
             write_disposition="merge",
             primary_key=('departure_scheduled', 'arrival_airport', 'airline__name'),
-            columns={
-                "departure_actual": {"dedup_sort": "desc"},
-                }
+            columns={"departure_actual": {"dedup_sort": "desc"}}
             )
         print(load_info)
     else:
