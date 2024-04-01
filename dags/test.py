@@ -1,4 +1,4 @@
-from utils import gcs_to_bigquery
+from utils import raw_to_datamart
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -32,4 +32,4 @@ raw_to_datamart = PythonOperator(
 
 raw_to_datamart 
 
-# Update 33
+# Update 34

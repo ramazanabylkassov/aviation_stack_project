@@ -9,6 +9,7 @@ import json
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
+import dlt
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
 
