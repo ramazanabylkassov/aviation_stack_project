@@ -98,6 +98,9 @@ def transform_data(json_data=None, yesterday=None):
         arrival_delay = json_line.get('arrival_delay')
         json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
 
+        airline__name = json_line.get('airline__name')
+        json_line['airline__name'] = str(airline__name) if airline__name is not None else None
+
         yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
