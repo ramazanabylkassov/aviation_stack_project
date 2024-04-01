@@ -103,29 +103,35 @@ def transform_data(json_data=None, yesterday=None):
 
         yield json_line
 
-def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
+def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema, location="US"):
     client = bigquery.Client()
-    
+
     table_full_id = f"{dataset_id}.{temp_table_id}"
     job_config = bigquery.LoadJobConfig(schema=schema)
-    
-    # Check if table exists to avoid unintentional overwrites
-    try:
-        client.get_table(table_full_id)
-        print(f"Table {temp_table_id} already exists. Consider handling this case appropriately.")
-    except GoogleAPIError as e:
-        print(f"Error checking for table existence: {e}")
-        return
-    except NotFound:
-        print(f"Table {temp_table_id} does not exist. Proceeding with loading data.")
+
+    # Create TableReference object
+    table_ref = bigquery.TableReference.from_string(table_full_id)
 
     try:
+        # Try to fetch the table to see if it exists
+        client.get_table(table_ref)
+        print(f"Table {temp_table_id} already exists.")
+    except NotFound:
+        # If the table does not exist, simply proceed as the table will be created during load
+        print(f"Table {temp_table_id} does not exist, will be created during data load.")
+    except GoogleAPIError as e:
+        print(f"Encountered an error checking for table existence: {e}")
+        return
+
+    try:
+        # Perform the data load
         load_job = client.load_table_from_json(
-            json_data,
-            table_full_id,
+            json_data=json_data,
+            destination=table_ref,
             job_config=job_config
         )
-        load_job.result()  # Wait for the job to complete
+        # Wait for the job to complete
+        load_job.result()
         print(f"Data loaded into temporary table {temp_table_id}.")
     except GoogleAPIError as e:
         print(f"Failed to load data into {temp_table_id}: {e}")
