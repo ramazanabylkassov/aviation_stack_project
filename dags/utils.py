@@ -77,7 +77,7 @@ def transform_data(json_data=None, yesterday=None):
     new_columns = [column.replace('__', '_') for column in old_columns]
     
     # Select the desired columns first
-    df_old = df[old_columns]
+    df_old = df[old_columns].copy()
     # Apply the filter for 'yesterday' on the 'departure__scheduled' column
     df_filtered = df_old[df_old['flight_date'] == yesterday]
     # Rename columns by replacing double underscores with single underscores
@@ -86,11 +86,18 @@ def transform_data(json_data=None, yesterday=None):
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     for json_line in json_file:
-        # Assuming json_line is a dictionary representing your data
-        json_line['flight_number'] = int(json_line.get('flight_number', 0))
-        json_line['departure_delay'] = float(json_line.get('departure_delay', 0.0))
-        json_line['arrival_delay'] = float(json_line.get('arrival_delay', 0.0))
-        # Repeat for any other INT64 fields
+        # Convert 'flight_number' to int, handling None correctly
+        flight_number = json_line.get('flight_number')
+        json_line['flight_number'] = int(flight_number) if flight_number is not None else None
+
+        # Convert 'departure_delay' to float, handling None correctly
+        departure_delay = json_line.get('departure_delay')
+        json_line['departure_delay'] = float(departure_delay) if departure_delay is not None else None
+
+        # Convert 'arrival_delay' to float, handling None correctly
+        arrival_delay = json_line.get('arrival_delay')
+        json_line['arrival_delay'] = float(arrival_delay) if arrival_delay is not None else None
+
         yield json_line
 
 def gcs_to_bigquery(ds=None, iata=None):
