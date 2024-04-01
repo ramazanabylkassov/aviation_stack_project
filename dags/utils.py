@@ -86,7 +86,7 @@ def transform_data(json_data=None, yesterday=None):
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     
-    return json_file 
+    return json_file, new_columns
 
     for json_line in json_file:
         # Convert 'flight_number' to int, handling None correctly
@@ -136,14 +136,14 @@ def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema, locati
     except GoogleAPIError as e:
         print(f"Failed to load data into {temp_table_id}: {e}")
 
-def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns):
+def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns):
     client = bigquery.Client()
 
     # Create the ON clause for the composite key
     on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
 
-    # Create the SET clause for the columns to be updated
-    set_clause = ', '.join([f"T.{col} = S.{col}" for col in columns_to_update])
+    # Dynamically create the SET clause for all other columns
+    set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
 
     merge_sql = f"""
     MERGE `{dataset_id}.{main_table_id}` T
@@ -151,8 +151,9 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     ON {on_clause}
     WHEN MATCHED THEN
         UPDATE SET {set_clause}
-    WHEN NOT MATCHED THEN
-        INSERT ROW
+    WHEN NOT MATCHED BY TARGET THEN
+        INSERT ({', '.join(all_columns)})
+        VALUES ({', '.join([f"S.{col}" for col in all_columns])})
     """
 
     # Execute the MERGE query
@@ -185,7 +186,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
-    json_to_bq = transform_data(
+    json_to_bq, all_columns = transform_data(
         json_data=all_data, 
         yesterday=ds_minus_one
         )
@@ -236,7 +237,7 @@ def gcs_to_bigquery(ds=None, iata=None):
 
     # Merge the temporary table into the main table
     unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
-    merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns)
+    merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns)
 
 def raw_to_datamart(ds=None, iata=None):
     # Initialize a BigQuery client
