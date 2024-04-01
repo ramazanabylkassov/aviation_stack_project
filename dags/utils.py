@@ -110,7 +110,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     pipeline = dlt.pipeline(
         pipeline_name='upload_to_bq',
         destination='bigquery',
-        dataset_name=f'{bucket_name}'
+        dataset_name='cities_raw_data'
     )
 
     json_to_bq = transform_data(
@@ -119,7 +119,11 @@ def gcs_to_bigquery(ds=None, iata=None):
         )
     
     if json_to_bq:
-        load_info = pipeline.run(json_to_bq, table_name="users")
+        load_info = pipeline.run(
+            json_to_bq, 
+            table_name="users",
+            write_disposition="merge"
+            )
         print(load_info)
     else:
         print("No data to upload.")
