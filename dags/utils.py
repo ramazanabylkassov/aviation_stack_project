@@ -52,7 +52,7 @@ def api_to_gcs(ds=None, iata=None):
 def transform_data(json_data=None, yesterday=None):
     print("Check #3")
     df = pd.json_normalize(json_data)
-    yesterday = yesterday.strftime('%Y_%m_%d')
+    yesterday = yesterday.strftime('%Y-%m-%d')
 
     old_columns = [
         'flight_date',
