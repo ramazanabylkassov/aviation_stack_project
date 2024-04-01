@@ -85,6 +85,9 @@ def transform_data(json_data=None, yesterday=None):
     df_filtered = df_filtered.replace({np.nan: None})
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
+    
+    return json_file 
+
     for json_line in json_file:
         # Convert 'flight_number' to int, handling None correctly
         flight_number = json_line.get('flight_number')
@@ -210,6 +213,8 @@ def gcs_to_bigquery(ds=None, iata=None):
         table = bigquery.Table(full_table_id, schema=schema)
         bigquery_client.create_table(table)  # This creates the table
         print(f"Table {full_table_id} created.")
+
+    
     # errors = bigquery_client.insert_rows_json(f"{dataset_id}.{table_id}", json_to_bq)
     # if errors == []:
     #     print("New rows have been added.")
