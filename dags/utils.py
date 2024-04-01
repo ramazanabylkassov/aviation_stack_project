@@ -122,18 +122,12 @@ def gcs_to_bigquery(ds=None, iata=None):
         load_info = pipeline.run(
             json_to_bq, 
             table_name="users",
-            write_disposition="merge",
-            primary_key=(
-                'departure_scheduled', 
-                'departure_actual', 
-                'arrival_airport',
-                'arrival_actual', 
-                'airline_name'
-                ),
+            write_disposition="append"
             )
         print(load_info)
     else:
         print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
-    print('raw_to_datamart')
+    
+    ...
