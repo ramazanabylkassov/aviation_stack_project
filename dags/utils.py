@@ -151,9 +151,8 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     ON {on_clause}
     WHEN MATCHED THEN
         UPDATE SET {set_clause}
-    WHEN NOT MATCHED BY TARGET THEN
-        INSERT ({', '.join(all_columns)})
-        VALUES ({', '.join([f"S.{col}" for col in all_columns])})
+    WHEN NOT MATCHED THEN
+        INSERT ROW;
     """
 
     # Execute the MERGE query
