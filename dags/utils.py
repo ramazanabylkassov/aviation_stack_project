@@ -16,7 +16,7 @@ def fetch_csv(iata=None):
     API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
     if not API_ACCESS_KEY:
         raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
-    url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata}"
+    url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata.upper()}"
     offset = 0
     output_file = []
 
@@ -40,7 +40,7 @@ def api_to_gcs(ds=None, iata=None):
         destination='filesystem',
         dataset_name=f'{iata}'
     )
-    json_file = fetch_csv(iata=iata.upper())
+    json_file = fetch_csv(iata=iata)
     if json_file:
         load_info = pipeline.run(
             json_file, 
@@ -123,7 +123,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     if json_to_bq:
         load_info = pipeline.run(
             json_to_bq, 
-            table_name="users",
+            table_name=f"{iata}",
             write_disposition="merge"
         )
         print(load_info)
