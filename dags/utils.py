@@ -123,8 +123,13 @@ def gcs_to_bigquery(ds=None, iata=None):
             json_to_bq, 
             table_name="users",
             write_disposition="merge",
-            primary_key=('departure_scheduled', 'arrival_airport', 'airline__name'),
-            columns={"departure_actual": {"dedup_sort": "desc"}}
+            primary_key=(
+                'departure_scheduled', 
+                'departure_actual', 
+                'arrival_airport',
+                'arrival_actual', 
+                'airline_name'
+                ),
             )
         print(load_info)
     else:
