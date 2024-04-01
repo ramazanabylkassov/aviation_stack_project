@@ -26,15 +26,15 @@ COMMON_raw_to_datamart = PythonOperator(
     dag=dag
 )
 
-cities = ['ASTANA', 'ALMATY', 'SHYMKENT']
+cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}
 
-for city in cities:
+for city in cities.keys():
     task_api_to_gcs = PythonOperator(
         task_id = f"{city}_api_to_gcs",
         python_callable=api_to_gcs,
         op_kwargs={
             'ds': '{{ ds }}', 
-            'iata': 'nqz'
+            'iata': f'{cities[city]}'
             },
         dag=dag
     )
@@ -44,7 +44,7 @@ for city in cities:
         python_callable=gcs_to_bigquery,
         op_kwargs={
             'ds': '{{ ds }}', 
-            'iata': 'nqz'
+            'iata': f'{cities[city]}'
             },
         dag=dag
     )
