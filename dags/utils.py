@@ -142,12 +142,15 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     # Create the ON clause for the composite key
     on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
 
+    # Create the SET clause for the columns to be updated
+    set_clause = ', '.join([f"T.{col} = S.{col}" for col in columns_to_update])
+
     merge_sql = f"""
     MERGE `{dataset_id}.{main_table_id}` T
     USING `{dataset_id}.{temp_table_id}` S
     ON {on_clause}
     WHEN MATCHED THEN
-        UPDATE SET T = S
+        UPDATE SET {set_clause}
     WHEN NOT MATCHED THEN
         INSERT ROW
     """
