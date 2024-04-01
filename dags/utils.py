@@ -103,6 +103,41 @@ def transform_data(json_data=None, yesterday=None):
 
         yield json_line
 
+def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
+    client = bigquery.Client()
+
+    job_config = bigquery.LoadJobConfig(schema=schema)
+
+    load_job = client.load_table_from_json(
+        json_data,
+        f"{dataset_id}.{temp_table_id}",
+        job_config=job_config
+    )
+
+    load_job.result()  # Wait for the job to complete
+    print(f"Data loaded into temporary table {temp_table_id}.")
+
+def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns):
+    client = bigquery.Client()
+
+    # Create the ON clause for the composite key
+    on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
+
+    merge_sql = f"""
+    MERGE `{dataset_id}.{main_table_id}` T
+    USING `{dataset_id}.{temp_table_id}` S
+    ON {on_clause}
+    WHEN MATCHED THEN
+        UPDATE SET T = S
+    WHEN NOT MATCHED THEN
+        INSERT ROW
+    """
+
+    # Execute the MERGE query
+    query_job = client.query(merge_sql)
+    query_job.result()  # Wait for the query to finish
+    print(f"Merge completed. Temporary data merged into {main_table_id}.")
+
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
     ds_minus_one = datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)
@@ -133,64 +168,73 @@ def gcs_to_bigquery(ds=None, iata=None):
         yesterday=ds_minus_one
         )
 
-    # bigquery_client = bigquery.Client()
-    # dataset_id = f'{bucket_name}.cities_raw_data'
-    # table_id = f'{iata}'
-    # full_table_id = f"{dataset_id}.{table_id}"
+    # Define the schema as before
+    schema = [
+        bigquery.SchemaField("flight_date", "DATE"),
+        bigquery.SchemaField("flight_number", "INT64"),
+        bigquery.SchemaField("flight_iata", "STRING"),
+        bigquery.SchemaField("departure_airport", "STRING"),
+        bigquery.SchemaField("departure_iata", "STRING"),
+        bigquery.SchemaField("departure_scheduled", "TIMESTAMP"),
+        bigquery.SchemaField("departure_actual", "TIMESTAMP"),
+        bigquery.SchemaField("departure_delay", "FLOAT64"),
+        bigquery.SchemaField("arrival_airport", "STRING"),
+        bigquery.SchemaField("arrival_iata", "STRING"),
+        bigquery.SchemaField("arrival_timezone", "STRING"),
+        bigquery.SchemaField("arrival_scheduled", "TIMESTAMP"),
+        bigquery.SchemaField("arrival_actual", "TIMESTAMP"),
+        bigquery.SchemaField("arrival_delay", "FLOAT64"),
+        bigquery.SchemaField("airline_name", "STRING"),
+        bigquery.SchemaField("airline_iata", "STRING")
+    ]
+
+    bigquery_client = bigquery.Client()
+    dataset_id = f'{bucket_name}.cities_raw_data'
+    main_table_id = f'{iata}'
+    full_table_id = f"{dataset_id}.{main_table_id}"
     # # Try to fetch the table, and create it if it doesn't exist
-    # try:
-    #     bigquery_client.get_table(full_table_id)  # This checks if the table exists
-    #     print(f"Table {full_table_id} already exists.")
-    # except NotFound:
-    #     # Define the schema as before
-    #     schema = [
-    #         bigquery.SchemaField("flight_date", "DATE"),
-    #         bigquery.SchemaField("flight_number", "INT64"),
-    #         bigquery.SchemaField("flight_iata", "STRING"),
-    #         bigquery.SchemaField("departure_airport", "STRING"),
-    #         bigquery.SchemaField("departure_iata", "STRING"),
-    #         bigquery.SchemaField("departure_scheduled", "TIMESTAMP"),
-    #         bigquery.SchemaField("departure_actual", "TIMESTAMP"),
-    #         bigquery.SchemaField("departure_delay", "FLOAT64"),
-    #         bigquery.SchemaField("arrival_airport", "STRING"),
-    #         bigquery.SchemaField("arrival_iata", "STRING"),
-    #         bigquery.SchemaField("arrival_timezone", "STRING"),
-    #         bigquery.SchemaField("arrival_scheduled", "TIMESTAMP"),
-    #         bigquery.SchemaField("arrival_actual", "TIMESTAMP"),
-    #         bigquery.SchemaField("arrival_delay", "FLOAT64"),
-    #         bigquery.SchemaField("airline_name", "STRING"),
-    #         bigquery.SchemaField("airline_iata", "STRING")
-    #     ]
-    #     table = bigquery.Table(full_table_id, schema=schema)
-    #     bigquery_client.create_table(table)  # This creates the table
-    #     print(f"Table {full_table_id} created.")
+    try:
+        bigquery_client.get_table(full_table_id)  # This checks if the table exists
+        print(f"Table {full_table_id} already exists.")
+    except NotFound:
+        table = bigquery.Table(full_table_id, schema=schema)
+        bigquery_client.create_table(table)  # This creates the table
+        print(f"Table {full_table_id} created.")
     # errors = bigquery_client.insert_rows_json(f"{dataset_id}.{table_id}", json_to_bq)
     # if errors == []:
     #     print("New rows have been added.")
     # else:
     #     print("Encountered errors while inserting rows: {}".format(errors))
 
-    pipeline = dlt.pipeline(
-        pipeline_name='load to bq incrementally',
-        destination='bigquery',
-        dataset_name='cities_raw_data'
-    )
+    # Load JSON data into the temporary table
+    temp_table_id = 'temp_table_for_merging'
+    load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
 
-    if json_to_bq:
-        load_info = pipeline.run(
-            json_to_bq, 
-            table_name=f"{iata}",
-            write_disposition="merge",
-            primary_key = (
-                'departure_scheduled',
-                'departure_actual',
-                'arrival_airport',
-                'arrival_actual'
-            )
-        )
-        print(load_info)
-    else:
-        print("No data to upload.")
+    # Merge the temporary table into the main table
+    unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
+    merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns)
+
+    # pipeline = dlt.pipeline(
+    #     pipeline_name='load to bq incrementally',
+    #     destination='bigquery',
+    #     dataset_name='cities_raw_data'
+    # )
+
+    # if json_to_bq:
+    #     load_info = pipeline.run(
+    #         json_to_bq, 
+    #         table_name=f"{iata}",
+    #         write_disposition="merge",
+    #         primary_key = (
+    #             'departure_scheduled',
+    #             'departure_actual',
+    #             'arrival_airport',
+    #             'arrival_actual'
+    #         )
+    #     )
+    #     print(load_info)
+    # else:
+    #     print("No data to upload.")
 
 def raw_to_datamart(ds=None, iata=None):
     # Initialize a BigQuery client
