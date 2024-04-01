@@ -126,7 +126,6 @@ def gcs_to_bigquery(ds=None, iata=None):
             primary_key=('departure_scheduled', 'arrival_airport', 'airline__name'),
             columns={
                 "departure_actual": {"dedup_sort": "desc"},
-                "arrival_actual": {"dedup_sort": "desc"},
                 }
             )
         print(load_info)
