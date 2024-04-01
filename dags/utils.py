@@ -8,7 +8,7 @@ from google.cloud import storage
 import pandas as pd
 import json
 from google.cloud import bigquery
-from google.api_core.exceptions import NotFound, GoogleAPIError
+from google.api_core.exceptions import NotFound, GoogleAPIError, BadRequest
 import numpy as np
 
 os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://de-project-flight-analyzer'
@@ -82,7 +82,7 @@ def transform_data(json_data=None, yesterday=None, unique_key=None):
     df_filtered = df_old[df_old['flight_date'] == yesterday]
     # Rename columns by replacing double underscores with single underscores
     df_filtered.columns = new_columns
-    df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key)
+    df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
     # Convert the filtered and renamed DataFrame to a dictionary
     json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
     
@@ -142,23 +142,26 @@ def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, u
     # Create the ON clause for the composite key
     on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
 
-    # Dynamically create the SET clause for all other columns
-    set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
+    # # Dynamically create the SET clause for all other columns
+    # set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
 
     merge_sql = f"""
     MERGE `{dataset_id}.{main_table_id}` T
     USING `{dataset_id}.{temp_table_id}` S
     ON {on_clause}
     WHEN MATCHED THEN
-        UPDATE SET {set_clause}
+        DELETE  -- Skip the row when matched
     WHEN NOT MATCHED THEN
-        INSERT ROW;
+        INSERT ROW
     """
 
     # Execute the MERGE query
-    query_job = client.query(merge_sql)
-    query_job.result()  # Wait for the query to finish
-    print(f"Merge completed. Temporary data merged into {main_table_id}.")
+    try:
+        query_job = client.query(merge_sql)
+        query_job.result()  # Wait for the query to finish
+        print(f"Merge completed. Temporary data merged into {main_table_id}.")
+    except BadRequest as e:
+        print(f"Merge operation failed: {e}")
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
