@@ -28,8 +28,13 @@ resource "google_storage_bucket" "demo-bucket" {
   }
 }
 
-resource "google_bigquery_dataset" "demo_dataset" {
-  dataset_id = var.bq_dataset_name
+resource "google_bigquery_dataset" "dataset_1" {
+  dataset_id = "flights_raw_data"
+  location   = var.location
+}
+
+resource "google_bigquery_dataset" "dataset_2" {
+  dataset_id = "flights_datamart"
   location   = var.location
 }
 
@@ -75,8 +80,3 @@ resource "google_composer_environment" "test" {
     }
   }
 }
-
-# resource "google_dataproc_cluster" "simplecluster" {
-#   name   = var.project_name
-#   region = "us-central1"
-# }

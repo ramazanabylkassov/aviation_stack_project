@@ -50,3 +50,5 @@ for city in cities.keys():
     )
 
     task_api_to_gcs >> task_gcs_to_bigquery >> COMMON_raw_to_datamart
+
+# Update 0
