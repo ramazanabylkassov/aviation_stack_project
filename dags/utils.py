@@ -234,7 +234,7 @@ def raw_to_datamart():
     destination_table_id = "total_flights_data"
 
     # Query data from source tables
-    combined_data = pd.concat([client.query(f"SELECT * FROM `{source_dataset_id}.{table_id}`").to_dataframe() for table_id in source_table_ids])
+    combined_data = pd.concat([client.query(f"SELECT *, FORMAT_DATE('%A', flight_date) AS weekday FROM `{source_dataset_id}.{table_id}`").to_dataframe() for table_id in source_table_ids])
 
     # Create or replace table in destination dataset
     destination_table_ref = client.dataset(destination_dataset_id).table(destination_table_id)
