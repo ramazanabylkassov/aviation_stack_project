@@ -233,8 +233,17 @@ def raw_to_datamart():
     destination_dataset_id = "flights_datamart"
     destination_table_id = "total_flights_data"
 
+    kaz_iata_str = "'sco', 'akx', 'sah', 'ala', 'ayk', 'atx', 'guw', 'bxh', 'ekb', 'kgf', 'kov', 'ksn', 'kzo', 'nqz', 'ura', 'ukk', 'pwq', 'ppk', 'plx', 'cit', 'tdk', 'dmb', 'hsa', 'uzr', 'usj', 'szi', 'dzn'"
+
     # Query data from source tables
-    combined_data = pd.concat([client.query(f"SELECT *, FORMAT_DATE('%A', flight_date) AS weekday, EXTRACT(HOUR FROM departure_scheduled) AS hour FROM `{source_dataset_id}.{table_id}`").to_dataframe() for table_id in source_table_ids])
+    combined_data = pd.concat([client.query(f"""
+                                            SELECT 
+                                                *, 
+                                                FORMAT_DATE('%A', flight_date) AS weekday, 
+                                                EXTRACT(HOUR FROM departure_scheduled) AS hour,
+                                                IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
+                                            FROM `{source_dataset_id}.{table_id}`
+                                            """).to_dataframe() for table_id in source_table_ids])
 
     # Create or replace table in destination dataset
     destination_table_ref = client.dataset(destination_dataset_id).table(destination_table_id)
