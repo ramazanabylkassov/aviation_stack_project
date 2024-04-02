@@ -20,22 +20,12 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
-ASTANA_gcs_to_bigquery = PythonOperator(
-    task_id = f"ASTANA_gcs_to_bigquery",
-    python_callable=gcs_to_bigquery,
-    op_kwargs={
-        'ds': '{{ ds }}', 
-        'iata': 'nqz'
-        },
-    dag=dag
-)
-
-ASTANA_raw_to_datamart = PythonOperator(
+raw_to_datamart = PythonOperator(
     task_id = "raw_to_datamart",
     python_callable=raw_to_datamart,
     dag=dag
 )
 
-ASTANA_gcs_to_bigquery >> ASTANA_raw_to_datamart 
+raw_to_datamart 
 
-# Update 36
+# Update 37
