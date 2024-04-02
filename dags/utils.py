@@ -11,26 +11,6 @@ from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
 import dlt
 
-def fetch_csv(iata=None):
-    API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
-    if not API_ACCESS_KEY:
-        raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
-    url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata.upper()}"
-    offset = 0
-    output_file = []
-
-    while True:
-        url = f"{url_base}&offset={offset}"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        temp_json = data.get('data', [])
-        output_file.extend(temp_json)
-        if int(data["pagination"]["count"]) < 100:
-            break
-        offset += 100
-    return output_file
-
 def api_to_gcs(ds=None, iata=None):
     # Dynamically set the environment variable for the GCS bucket URL
     os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
@@ -48,6 +28,28 @@ def api_to_gcs(ds=None, iata=None):
         destination='filesystem',
         dataset_name=f'{iata}'
     )
+
+    def fetch_csv(iata=None):
+        API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
+        if not API_ACCESS_KEY:
+            raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
+        url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata.upper()}"
+        offset = 0
+        output_file = []
+
+        while True:
+            url = f"{url_base}&offset={offset}"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            temp_json = data.get('data', [])
+            output_file.extend(temp_json)
+            if int(data["pagination"]["count"]) < 100:
+                break
+            offset += 100
+        
+        return output_file
+
     json_file = fetch_csv(iata=iata)
     if json_file:
         load_info = pipeline.run(
@@ -58,103 +60,6 @@ def api_to_gcs(ds=None, iata=None):
         print(load_info)
     else:
         print("No data to upload.")
-
-def transform_data(json_data=None, yesterday=None, unique_key=None):
-    df = pd.json_normalize(json_data)
-    yesterday = yesterday.strftime('%Y-%m-%d')
-    old_columns = [
-        'flight_date',
-        'flight__number',
-        'flight__iata',
-        'departure__airport',
-        'departure__iata',
-        'departure__scheduled',
-        'departure__actual',
-        'departure__delay',
-        'arrival__airport',
-        'arrival__iata',
-        'arrival__timezone',
-        'arrival__scheduled',  
-        'arrival__actual',
-        'arrival__delay',
-        'airline__name',
-        'airline__iata',
-    ]
-    new_columns = [column.replace('__', '_') for column in old_columns]
-    
-    # Select the desired columns first
-    df_old = df[old_columns].copy()
-    # Apply the filter for 'yesterday' on the 'departure__scheduled' column
-    df_filtered = df_old[df_old['flight_date'] == yesterday]
-    # Rename columns by replacing double underscores with single underscores
-    df_filtered.columns = new_columns
-    df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
-    # Convert the filtered and renamed DataFrame to a dictionary
-    json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
-    
-    return json_file, new_columns
-
-def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
-    client = bigquery.Client()
-
-    table_full_id = f"{dataset_id}.{temp_table_id}"
-    job_config = bigquery.LoadJobConfig(schema=schema)
-
-    # Create TableReference object
-    table_ref = bigquery.TableReference.from_string(table_full_id)
-
-    try:
-        # Try to fetch the table to see if it exists
-        client.get_table(table_ref)
-        print(f"Table {temp_table_id} already exists.")
-    except NotFound:
-        # If the table does not exist, simply proceed as the table will be created during load
-        print(f"Table {temp_table_id} does not exist, will be created during data load.")
-    except GoogleAPIError as e:
-        print(f"Encountered an error checking for table existence: {e}")
-        return
-
-    try:
-        # Perform the data load
-        load_job = client.load_table_from_json(
-            json_data,
-            destination=table_ref,
-            job_config=job_config
-        )
-        # Wait for the job to complete
-        load_job.result()
-        print(f"Data loaded into temporary table {temp_table_id}.")
-    except GoogleAPIError as e:
-        print(f"Failed to load data into {temp_table_id}: {e}")
-
-def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns):
-    client = bigquery.Client()
-
-    # Create the ON clause for the composite key
-    on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
-
-    # Dynamically create the SET clause for all other columns
-    set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
-
-    merge_sql = f"""
-    MERGE `{dataset_id}.{main_table_id}` T
-    USING `{dataset_id}.{temp_table_id}` S
-    ON {on_clause}
-    WHEN MATCHED THEN
-        UPDATE SET {set_clause}
-    WHEN NOT MATCHED THEN
-        INSERT ROW
-    """
-
-    # Execute the MERGE query
-    query_job = client.query(merge_sql)
-    query_job.result()  # Wait for the query to finish
-    print(f"Merge completed. Temporary data merged into {main_table_id}.")
-
-    # Clear the temporary table
-    clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
-    clear_job = client.query(clear_temp_table_sql)
-    clear_job.result()
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -182,6 +87,41 @@ def gcs_to_bigquery(ds=None, iata=None):
     else:  # No files found
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
+    def transform_data(json_data=None, yesterday=None, unique_key=None):
+        df = pd.json_normalize(json_data)
+        yesterday = yesterday.strftime('%Y-%m-%d')
+        old_columns = [
+            'flight_date',
+            'flight__number',
+            'flight__iata',
+            'departure__airport',
+            'departure__iata',
+            'departure__scheduled',
+            'departure__actual',
+            'departure__delay',
+            'arrival__airport',
+            'arrival__iata',
+            'arrival__timezone',
+            'arrival__scheduled',  
+            'arrival__actual',
+            'arrival__delay',
+            'airline__name',
+            'airline__iata',
+        ]
+        new_columns = [column.replace('__', '_') for column in old_columns]
+        
+        # Select the desired columns first
+        df_old = df[old_columns].copy()
+        # Apply the filter for 'yesterday' on the 'departure__scheduled' column
+        df_filtered = df_old[df_old['flight_date'] == yesterday]
+        # Rename columns by replacing double underscores with single underscores
+        df_filtered.columns = new_columns
+        df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
+        # Convert the filtered and renamed DataFrame to a dictionary
+        json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
+        
+        return json_file, new_columns
+
     json_to_bq, all_columns = transform_data(json_data=all_data, yesterday=ds_minus_one, unique_key=unique_key_columns)
 
     # Define the schema as before
@@ -216,9 +156,71 @@ def gcs_to_bigquery(ds=None, iata=None):
         table = bigquery.Table(full_table_id, schema=schema)
         bigquery_client.create_table(table)  # This creates the table
         print(f"Table {full_table_id} created.")
-        
+    
+    def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
+        client = bigquery.Client()
+
+        table_full_id = f"{dataset_id}.{temp_table_id}"
+        job_config = bigquery.LoadJobConfig(schema=schema)
+
+        # Create TableReference object
+        table_ref = bigquery.TableReference.from_string(table_full_id)
+
+        try:
+            # Try to fetch the table to see if it exists
+            client.get_table(table_ref)
+            print(f"Table {temp_table_id} already exists.")
+        except NotFound:
+            # If the table does not exist, simply proceed as the table will be created during load
+            print(f"Table {temp_table_id} does not exist, will be created during data load.")
+        except GoogleAPIError as e:
+            print(f"Encountered an error checking for table existence: {e}")
+            return
+
+        try:
+            # Perform the data load
+            load_job = client.load_table_from_json(
+                json_data,
+                destination=table_ref,
+                job_config=job_config
+            )
+            # Wait for the job to complete
+            load_job.result()
+            print(f"Data loaded into temporary table {temp_table_id}.")
+        except GoogleAPIError as e:
+            print(f"Failed to load data into {temp_table_id}: {e}")
+
     temp_table_id = f'temp_table_{iata}'
     load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
+
+    def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns):
+        client = bigquery.Client()
+
+        # Create the ON clause for the composite key
+        on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
+
+        # Dynamically create the SET clause for all other columns
+        set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
+
+        merge_sql = f"""
+        MERGE `{dataset_id}.{main_table_id}` T
+        USING `{dataset_id}.{temp_table_id}` S
+        ON {on_clause}
+        WHEN MATCHED THEN
+            UPDATE SET {set_clause}
+        WHEN NOT MATCHED THEN
+            INSERT ROW
+        """
+
+        # Execute the MERGE query
+        query_job = client.query(merge_sql)
+        query_job.result()  # Wait for the query to finish
+        print(f"Merge completed. Temporary data merged into {main_table_id}.")
+
+        # Clear the temporary table
+        clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
+        clear_job = client.query(clear_temp_table_sql)
+        clear_job.result()
 
     # Merge the temporary table into the main table
     merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns)
@@ -233,7 +235,7 @@ def raw_to_datamart():
     destination_dataset_id = "flights_datamart"
     destination_table_id = "total_flights_data"
 
-    kaz_iata_str = "'sco', 'akx', 'sah', 'ala', 'ayk', 'atx', 'guw', 'bxh', 'ekb', 'kgf', 'kov', 'ksn', 'kzo', 'nqz', 'ura', 'ukk', 'pwq', 'ppk', 'plx', 'cit', 'tdk', 'dmb', 'hsa', 'uzr', 'usj', 'szi', 'dzn'"
+    kaz_iata_str = "'SCO', 'AKX', 'SAH', 'ALA', 'AYK', 'ATX', 'GUW', 'BXH', 'EKB', 'KGF', 'KOV', 'KSN', 'KZO', 'NQZ', 'URA', 'UKK', 'PWQ', 'PPK', 'PLX', 'CIT', 'TDK', 'DMB', 'HSA', 'UZR', 'USJ', 'SZI', 'DZN'"
 
     # Query data from source tables
     combined_data = pd.concat([client.query(f"""
