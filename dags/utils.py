@@ -39,6 +39,10 @@ def api_to_gcs(ds=None, iata=None):
 
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
+
+    print(f'Airflows ds datetime is {ds_datetime}')
+    print(f'Yesterday was: {yesterday}')
+
     pipeline = dlt.pipeline(
         pipeline_name=f'flights_departures_{iata}',
         destination='filesystem',
