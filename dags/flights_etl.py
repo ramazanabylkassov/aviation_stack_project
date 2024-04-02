@@ -20,8 +20,8 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
-COMMON_raw_to_datamart = PythonOperator(
-    task_id = "COMMON_raw_to_datamart",
+BIGQUERY_raw_to_datamart = PythonOperator(
+    task_id = "BIGQUERY_raw_to_datamart",
     python_callable=raw_to_datamart,
     dag=dag
 )
@@ -49,6 +49,6 @@ for city in cities.keys():
         dag=dag
     )
 
-    task_api_to_gcs >> task_gcs_to_bigquery >> COMMON_raw_to_datamart
+    task_api_to_gcs >> task_gcs_to_bigquery >> BIGQUERY_raw_to_datamart
 
-# Update 4
+# Update 5
