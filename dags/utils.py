@@ -32,7 +32,10 @@ def fetch_csv(iata=None):
     return output_file
 
 def api_to_gcs(ds=None, iata=None):
+    # Dynamically set the environment variable for the GCS bucket URL
     os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
+    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
+    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
 
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
