@@ -11,8 +11,6 @@ from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
 import dlt
 
-os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
-
 def fetch_csv(iata=None):
     API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
     if not API_ACCESS_KEY:
@@ -34,6 +32,8 @@ def fetch_csv(iata=None):
     return output_file
 
 def api_to_gcs(ds=None, iata=None):
+    os.environ['FLIGHTS_DEPARTURES__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
+    
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
     pipeline = dlt.pipeline(
