@@ -18,6 +18,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
+    - name: Run Airflow migrations
+      run: airflow db upgrade
     - name: Run tests
       run: pytest dags/test.py
       
