@@ -20,13 +20,17 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
+cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}
+
 BIGQUERY_raw_to_datamart = PythonOperator(
     task_id = "BIGQUERY_raw_to_datamart",
     python_callable=raw_to_datamart,
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'cities': cities
+        },
     dag=dag
 )
-
-cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}
 
 for city in cities.keys():
     task_api_to_gcs = PythonOperator(

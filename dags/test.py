@@ -20,15 +20,15 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
-cit_api_to_gcs = PythonOperator(
-    task_id = f"cit_api_to_gcs",
-    python_callable=api_to_gcs,
-    op_kwargs={
-        'ds': '{{ ds }}', 
-        'iata': f'cit'
-        },
-    dag=dag
-)
+# cit_api_to_gcs = PythonOperator(
+#     task_id = f"cit_api_to_gcs",
+#     python_callable=api_to_gcs,
+#     op_kwargs={
+#         'ds': '{{ ds }}', 
+#         'iata': f'cit'
+#         },
+#     dag=dag
+# )
 
 cit_gcs_to_bigquery = PythonOperator(
         task_id = f"cit_gcs_to_bigquery",
@@ -46,6 +46,6 @@ raw_to_datamart = PythonOperator(
     dag=dag
 )
 
-cit_api_to_gcs >> cit_gcs_to_bigquery >> raw_to_datamart
+cit_gcs_to_bigquery >> raw_to_datamart
 
-# Update 42
+# Update 43

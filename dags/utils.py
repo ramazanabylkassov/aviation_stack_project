@@ -225,8 +225,8 @@ def gcs_to_bigquery(ds=None, iata=None):
         print(f"Merge completed. Temporary data merged into {main_table_id}.")
 
         # Get the row count of the main dataset after merging
-        # dataset_ref = bq_client.dataset(dataset_id, project=project_name)
-        # dataset = bq_client.get_dataset(dataset_ref)
+        dataset_ref = bq_client.dataset(dataset_id, project=project_name)
+        dataset = bq_client.get_dataset(dataset_ref)
         query_job = bq_client.query(f"SELECT COUNT(*) as row_count FROM `{main_table_full_id}.__TABLES__`")
         result = query_job.result()
         row_count = list(result)[0].row_count
@@ -250,22 +250,25 @@ def gcs_to_bigquery(ds=None, iata=None):
             - Start time: {start_time}
             - End time: {end_time}
             - Time taken: {time_taken}
-            - BQ path: {main_table_full_id}
+            - BQ path of the result table: {main_table_full_id}
             - Size of the transformed dataset from GCS: 
                 - Columns: {transformed_dataset_size[1]}
                 - Rows: {transformed_dataset_size[0]}
             - Size of the {main_table_full_id} dataset after merging: {row_count}
             """)
 
-def raw_to_datamart():
+def raw_to_datamart(ds=None, cities=None):
+    start_time = datetime.now()
+    print(f"TASK 3: BQ(raw data: {', '.join(cities.keys())}) -> BQ(data mart) STARTED")
+    
     # Initialize BigQuery client
     bq_client = bigquery.Client()
 
     # Define datasets and tables
     source_dataset_id = "flights_raw_data"
-    source_table_ids = ["cit", "ala", "nqz"]
     destination_dataset_id = "flights_datamart"
     destination_table_id = "total_flights_data"
+    full_table_id = f"{destination_dataset_id}.{destination_table_id}"
 
     kaz_iata_str = "'SCO', 'AKX', 'SAH', 'ALA', 'AYK', 'ATX', 'GUW', 'BXH', 'EKB', 'KGF', 'KOV', 'KSN', 'KZO', 'NQZ', 'URA', 'UKK', 'PWQ', 'PPK', 'PLX', 'CIT', 'TDK', 'DMB', 'HSA', 'UZR', 'USJ', 'SZI', 'DZN'"
 
@@ -284,7 +287,7 @@ def raw_to_datamart():
                                                 EXTRACT(HOUR FROM departure_scheduled) AS hour,
                                                 IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
                                             FROM `{source_dataset_id}.{table_id}`
-                                            """).to_dataframe() for table_id in source_table_ids])
+                                            """).to_dataframe() for table_id in list(cities.values())])
 
     # Create or replace table in destination dataset
     destination_table_ref = bq_client.dataset(destination_dataset_id).table(destination_table_id)
@@ -293,3 +296,17 @@ def raw_to_datamart():
     job.result()
 
     print(f"Table {destination_dataset_id}.{destination_table_id} created or replaced with data from source tables.")
+
+    end_time = datetime.now()
+    time_taken = end_time - start_time
+    
+    print(f"""
+          TASK 3: BQ(raw data: {', '.join(cities.keys())}) -> BQ(data mart) FINITO
+          RESULTS:
+            - Logical date: {ds}
+            - Start time: {start_time}
+            - End time: {end_time}
+            - Time taken: {time_taken}
+            - BQ path of the result table: {full_table_id}
+            - Size of the {full_table_id} dataset after merging: {row_count}
+            """)
