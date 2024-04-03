@@ -65,6 +65,7 @@ def api_to_gcs(ds=None, iata=None):
     end_time = datetime.now()
     time_taken = end_time - start_time
     
+    # Print report on the task
     print(f"""
           TASK 1: API -> GCS for {iata.upper()} FINITO
           RESULTS:
@@ -133,13 +134,13 @@ def gcs_to_bigquery(ds=None, iata=None):
         df_filtered = df[df['flight_date'] == yesterday]
         df_filtered.columns = new_columns
         df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
-        transformed_dataset_size = df_filtered.size
+        
         # Convert back to json
         json_file = df_filtered.to_dict(orient='records')
         
-        return json_file, new_columns, transformed_dataset_size
+        return json_file, new_columns
 
-    json_to_bq, new_columns, transformed_dataset_size = transform_data(
+    json_to_bq, new_columns = transform_data(
         json_data=json_data, 
         yesterday=yesterday_dash, 
         unique_key=unique_key_columns
@@ -220,10 +221,14 @@ def gcs_to_bigquery(ds=None, iata=None):
         WHEN NOT MATCHED THEN
             INSERT ROW
         """
-        query_job = bq_client.query(merge_sql)
-        query_job.result()
-        print(f"Merge completed. Temporary data merged into {main_table_id}.")
-
+        try:
+            query_job = bq_client.query(merge_sql)
+            query_job.result()
+            print(f"Merge completed. Temporary data merged into {main_table_id}.")
+        except Exception as e:
+            # Catching any type of exception and printing a generic error message
+            print("An error occurred during the merge operation:", e)
+        
         # Delete the temporary table
         clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
         clear_job = bq_client.query(clear_temp_table_sql)
@@ -234,6 +239,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     end_time = datetime.now()
     time_taken = end_time - start_time
     
+    # Print report on the task
     print(f"""
           TASK 2: GCS -> BQ for {iata.upper()} FINITO
           RESULTS:
@@ -242,9 +248,6 @@ def gcs_to_bigquery(ds=None, iata=None):
             - End time: {end_time}
             - Time taken: {time_taken}
             - BQ path of the result table: {main_table_full_id}
-            - Size of the transformed dataset from GCS: 
-                - Columns: {transformed_dataset_size[1]}
-                - Rows: {transformed_dataset_size[0]}
             """)
 
 def raw_to_datamart(ds=None, cities=None):
@@ -290,6 +293,7 @@ def raw_to_datamart(ds=None, cities=None):
     end_time = datetime.now()
     time_taken = end_time - start_time
     
+    # Print report on the task
     print(f"""
           TASK 3: BQ(raw data: {', '.join(cities.keys())}) -> BQ(data mart) FINITO
           RESULTS:
