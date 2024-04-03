@@ -6,7 +6,7 @@ Welcome to the "DepartureDelayDiagnosis" Data Engineering project, focusing on a
 
 Analyzing departure delays enables the identification of patterns and trends, optimizing operational efficiency, and enhancing customer experience. It informs resource allocation, ensures regulatory compliance, and facilitates competitive analysis among airlines. Moreover, it aids in route planning and optimization strategies to minimize delays and enhance overall airline performance.
 
-This project utilizes data provided by the [Aviation Stack website](https://aviationstack.com/).
+The objective is to leverage information obtained from the [Aviation Stack website](https://aviationstack.com/) for examining various factors potentially associated with departure delays. This investigation will encompass the day of the week of departure, destination, and the airline. The project intends to fetch data in **batches daily** through the specified API, execute necessary data transformations, and present the findings on a dashboard, as outlined in the architecture below.
 
 ## Architecture
 ![project architecture](images/Ramazan%20Data%20Eng%20Project.jpg)
@@ -29,9 +29,9 @@ By executing these steps, the project aims to provide insights into departure de
 1. **CI/CD**: GitHub Actions
 2. **IaC**: Terraform
 3. **Orchestration**: Google Cloud Composer (Apache Airflow)
-4. **Data Lake**: Google Cloud Storage
-5. **Data Warehouse**: Google BigQuery
-6. **Data Ingestion (batch)**: Python, Data Load Tool
+4. **Data Ingestion (batch)**: Python, Data Load Tool
+5. **Data Lake**: Google Cloud Storage
+6. **Data Warehouse**: Google BigQuery
 7. **Visualization**: Google Looker Studio
 
 ## Reproducibility
