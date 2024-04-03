@@ -71,7 +71,8 @@ def api_to_gcs(ds=None, iata=None):
             table_name=table_name, 
             write_disposition="replace"
             )
-        print(load_info)
+        print(f"""dlt load info:
+              {load_info}""")
     else:
         print("No data to upload.")
     
