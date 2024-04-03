@@ -17,7 +17,7 @@ dag = DAG(
     'testdag', 
     default_args=default_args,
     description='flights etl dag',
-    schedule_interval=timedelta(days=1), 
+    schedule_interval="0 1 * * *", 
 )
 
 # cit_api_to_gcs = PythonOperator(
