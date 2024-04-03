@@ -18,8 +18,10 @@ def api_to_gcs(ds=None, iata=None):
     print(f"TASK 1: API -> GCS for {iata.upper()} STARTED")
 
     os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = f'gs://{project_name}'
-    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
+    yesterday = datetime.strptime(ds, '%Y-%m-%d').strftime('%Y_%m_%d')
+
+    print(f'!!!!!!! Yesterday was: {yesterday}')
+
     table_name = f"{iata}_{yesterday}"
 
     def fetch_csv(iata=None):
@@ -87,7 +89,7 @@ def gcs_to_bigquery(ds=None, iata=None):
     bq_client = bigquery.Client()
 
     # Define GCS parameters
-    ds_datetime = datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)
+    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday_underscore = ds_datetime.strftime('%Y_%m_%d')
     yesterday_dash = ds_datetime.strftime('%Y-%m-%d')
     table_name = f"{iata}_{yesterday_underscore}"
