@@ -1,6 +1,8 @@
-# Departure Delay Diagnosis
+# DepartureDelayDiagnosis
 
-Welcome to the "Departure Delay Diagnosis" Data Engineering project aimed at analyzing and addressing departure delays in three cities of republican significance in Kazakhstan: Astana (NQZ), Almaty (ALA), and Shymkent (CIT).
+[Link to the dashboard](https://lookerstudio.google.com/reporting/a3e131ab-435c-452c-89d1-ec205d9e11c5)
+
+Welcome to the "DepartureDelayDiagnosis" Data Engineering project aimed at analyzing and addressing departure delays in three cities of republican significance in Kazakhstan: Astana (NQZ), Almaty (ALA), and Shymkent (CIT).
 
 Departure delays pose significant challenges for passengers, necessitating comprehensive analysis and resolution.
 

@@ -7,6 +7,7 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2024, 3, 30),
+    'catchup': True,
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -17,7 +18,7 @@ dag = DAG(
     'FlightsETL', 
     default_args=default_args,
     description='flights etl dag',
-    schedule_interval=timedelta(days=1), 
+    schedule_interval="0 1 * * *", 
 )
 
 cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}

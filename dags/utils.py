@@ -252,6 +252,7 @@ def gcs_to_bigquery(ds=None, iata=None):
 
 def raw_to_datamart(ds=None, cities=None):
     start_time = datetime.now()
+    print(f"ds: {ds}")
     print(f"TASK 3: BQ(raw data: {', '.join(cities.keys())}) -> BQ(data mart) STARTED")
     
     # Initialize BigQuery client
