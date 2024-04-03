@@ -1,4 +1,5 @@
 from airflow.models import DagBag, TaskInstance, DagRun
+from airflow.models.dagrun import DagRunType
 from datetime import datetime, timedelta
 from airflow.utils.session import create_session
 from airflow.utils.state import State
@@ -18,12 +19,14 @@ def test_task_execution():
     execution_date = datetime.now(pytz.utc)
 
     with create_session() as session:
+        # Specify run_type when creating DagRun
         dag_run = DagRun(
             dag_id='FlightsETL',
             run_id='test_run',
             execution_date=execution_date,
             start_date=execution_date,
-            state=State.RUNNING
+            state=State.RUNNING,
+            run_type=DagRunType.MANUAL  # This line is added to specify run_type
         )
         session.add(dag_run)
         session.commit()
