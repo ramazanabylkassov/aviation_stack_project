@@ -1,10 +1,10 @@
 from airflow.models import DagBag, TaskInstance
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def test_dag_import():
     """DAG Import Test checks if all DAGs in the specified folder can be imported without any errors. This helps catch syntax errors, import failures, or other initialisation issues."""
 
-    dag_bag = DagBag(dag_folder='path/to/your/dag/directory', include_examples=False)
+    dag_bag = DagBag(dag_folder='dags/', include_examples=False)
     assert dag_bag.import_errors == {}, "DAG import failed"
 
 def test_task_execution():
@@ -16,7 +16,7 @@ def test_task_execution():
     task = my_dag.get_task('BIGQUERY_raw_to_datamart')
     
     # Simulate execution of the task
-    ti = TaskInstance(task=task, execution_date=datetime.now())
+    ti = TaskInstance(task=task, execution_date=datetime.now() - timedelta(days=1))
     context = ti.get_template_context()
     ti.run(ignore_ti_state=True)  # Set ignore_ti_state to True to not check the previous state of the TaskInstance
     
