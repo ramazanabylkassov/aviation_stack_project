@@ -133,7 +133,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         df_filtered = df[df['flight_date'] == yesterday]
         df_filtered.columns = new_columns
         df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
-        transformed_dataset_size = df_filtered.size[0]
+        transformed_dataset_size = df_filtered.size
         # Convert back to json
         json_file = df_filtered.to_dict(orient='records')
         
@@ -179,6 +179,7 @@ def gcs_to_bigquery(ds=None, iata=None):
         bq_client.create_table(table)
         print(f"Table {main_table_full_id} created.")
     
+
     def load_json_to_temp_table(json_data, temp_table_full_id, schema):
         job_config = bigquery.LoadJobConfig(schema=schema)
         table_ref = bigquery.TableReference.from_string(temp_table_full_id)
@@ -205,6 +206,7 @@ def gcs_to_bigquery(ds=None, iata=None):
 
     load_json_to_temp_table(json_to_bq, temp_table_full_id, schema)
 
+    # Merge the temporary table into the main table
     def merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns):
         # Merge temporary and main tables
         compare_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
@@ -236,7 +238,6 @@ def gcs_to_bigquery(ds=None, iata=None):
 
         return row_count
 
-    # Merge the temporary table into the main table
     row_count = merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns)
 
     end_time = datetime.now()
