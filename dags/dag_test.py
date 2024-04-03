@@ -15,7 +15,7 @@ default_args = {
 }
 
 dag = DAG(
-    'FlightsETL', 
+    'FlightsETL_test', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval="0 1 * * *", 
