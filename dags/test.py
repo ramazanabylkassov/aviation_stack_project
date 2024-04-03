@@ -1,4 +1,4 @@
-from utils import raw_to_datamart, gcs_to_bigquery
+from utils import raw_to_datamart, gcs_to_bigquery, api_to_gcs
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -20,12 +20,22 @@ dag = DAG(
     schedule_interval=timedelta(days=1), 
 )
 
-raw_to_datamart = PythonOperator(
-    task_id = "raw_to_datamart",
-    python_callable=raw_to_datamart,
+cit_api_to_gcs = PythonOperator(
+    task_id = f"cit_api_to_gcs",
+    python_callable=api_to_gcs,
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'iata': f'cit'
+        },
     dag=dag
 )
 
-raw_to_datamart 
+# raw_to_datamart = PythonOperator(
+#     task_id = "raw_to_datamart",
+#     python_callable=raw_to_datamart,
+#     dag=dag
+# )
+
+cit_api_to_gcs 
 
 # Update 37

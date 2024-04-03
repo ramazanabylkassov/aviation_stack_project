@@ -11,18 +11,29 @@ from google.api_core.exceptions import NotFound, GoogleAPIError
 import numpy as np
 import dlt
 
+project_name = "de-project-flight-analyzer"
+ds_datetime_global = datetime.strptime('{{ ds }}', '%Y-%m-%d')
+yesterday_global = (ds_datetime_global - timedelta(days=1)).strftime('%Y_%m_%d')
+
 def api_to_gcs(ds=None, iata=None):
-    # Dynamically set the environment variable for the GCS bucket URL
-    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
-    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
-    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__BUCKET_URL'] = 'gs://de-project-flight-analyzer'
+    start_time = datetime.datetime.now()
+    print(f"TASK 1: API -> GCS for {iata} STARTED")
+
+    # os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{project_name}'
+    os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = f'gs://{project_name}'
+    # os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__BUCKET_URL'] = f'gs://{project_name}'
 
     ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
     yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
 
-    print(f'Airflows ds datetime is {ds_datetime}')
-    print(f'Yesterday was: {yesterday}')
-
+    print(f"""
+          TEST PRINT:
+          - ds_datetime_global: {ds_datetime_global}
+          - yesterday_global: {yesterday_global}
+          - ds_datetime: {ds_datetime}
+          - yesterday: {yesterday}
+        """)
+    
     pipeline = dlt.pipeline(
         pipeline_name=f'flights_departures_{iata}',
         destination='filesystem',
@@ -36,30 +47,47 @@ def api_to_gcs(ds=None, iata=None):
         url_base = f"http://api.aviationstack.com/v1/flights?access_key={API_ACCESS_KEY}&dep_iata={iata.upper()}"
         offset = 0
         output_file = []
+        api_total_size = 0
 
         while True:
             url = f"{url_base}&offset={offset}"
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
-            temp_json = data.get('data', [])
-            output_file.extend(temp_json)
+            api_total_size = int(data["pagination"]["total"])
+            output_file.extend(data.get('data', []))
             if int(data["pagination"]["count"]) < 100:
                 break
             offset += 100
         
-        return output_file
+        return output_file, api_total_size
 
-    json_file = fetch_csv(iata=iata)
+    json_file, api_total_size = fetch_csv(iata=iata)
+    table_name = f"{iata}_{yesterday}"
+
     if json_file:
         load_info = pipeline.run(
             json_file, 
-            table_name=f"{iata}_{yesterday}", 
+            table_name=table_name, 
             write_disposition="replace"
             )
         print(load_info)
     else:
         print("No data to upload.")
+    
+    end_time = datetime.datetime.now()
+    time_taken = end_time - start_time
+
+    print(f"""
+          TASK 1: API -> GCS for {iata} FINITO
+          RESULTS:
+            - Start time: {start_time}
+            - End time: {end_time}
+            - Time taken: {time_taken} seconds
+            - Uploaded to GCS bucket: {project_name}/{iata}
+            - Foulder name: {table_name}
+            - API request size: {api_total_size}
+            """)
 
 def gcs_to_bigquery(ds=None, iata=None):
     # Define your GCS parameters
@@ -240,7 +268,13 @@ def raw_to_datamart():
     # Query data from source tables
     combined_data = pd.concat([client.query(f"""
                                             SELECT 
-                                                *, 
+                                                flight_date,
+                                                departure_airport,
+                                                departure_scheduled,
+                                                COALESCE(departure_delay, 0) AS departure_delay,
+                                                arrival_airport,
+                                                arrival_iata,
+                                                airline_name,
                                                 FORMAT_DATE('%A', flight_date) AS weekday, 
                                                 EXTRACT(HOUR FROM departure_scheduled) AS hour,
                                                 IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type

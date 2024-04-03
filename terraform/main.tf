@@ -47,6 +47,8 @@ resource "google_composer_environment" "test" {
       image_version = "composer-2.6.4-airflow-2.6.3"
       pypi_packages = {
         dlt = "==0.4.7" # Specify version as required
+        airflow-dbt = "==0.4.0"
+        dbt-bigquery = "==0.21.0"
       }
       env_variables = {
         API_IATACODE_ACCESS_KEY = "your_access_key_here" # Replace with your IATA code and corresponding access key
