@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from airflow.models import DagBag, TaskInstance, DagRun
 from airflow.models.dagrun import DagRunType
 from datetime import datetime, timedelta
@@ -21,14 +21,23 @@ def mock_dependencies():
         mock_dependencies_met.return_value = True
         yield
 
-def test_task_execution(mock_dependencies):
-    """Task Execution Test focuses on executing a specific task within a DAG to ensure it can run to completion successfully."""
+@pytest.fixture
+def mock_bigquery_client():
+    """Mock the BigQuery Client."""
+    with patch('google.cloud.bigquery.Client') as MockClient:
+        # Mock any method of BigQuery client that your DAG's tasks call
+        mock_client_instance = Mock()
+        MockClient.return_value = mock_client_instance
+        yield mock_client_instance
+
+def test_task_execution(mock_bigquery_client):
+    """Task Execution Test focusing on a specific task within a DAG."""
     # Import the DAG from your project
     execution_date = datetime.now(pytz.utc)
 
     with create_session() as session:
         dag_run = DagRun(
-            dag_id='FlightsETL',
+            dag_id='FlightsETL_pytest',
             run_id='test_run',
             execution_date=execution_date,
             start_date=execution_date,
