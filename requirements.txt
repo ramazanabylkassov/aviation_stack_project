@@ -4,3 +4,4 @@ google-cloud-bigquery==3.20.1
 pytest
 pandas==2.0.3
 google==3.0.0
+dlt=0.4.7
