@@ -30,12 +30,22 @@ cit_api_to_gcs = PythonOperator(
     dag=dag
 )
 
+cit_gcs_to_bigquery = PythonOperator(
+        task_id = f"cit_gcs_to_bigquery",
+        python_callable=gcs_to_bigquery,
+        op_kwargs={
+            'ds': '{{ ds }}', 
+            'iata': 'cit'
+            },
+        dag=dag
+    )
+
 raw_to_datamart = PythonOperator(
     task_id = "raw_to_datamart",
     python_callable=raw_to_datamart,
     dag=dag
 )
 
-cit_api_to_gcs 
+cit_api_to_gcs >> cit_gcs_to_bigquery >> raw_to_datamart
 
-# Update 39
+# Update 41
