@@ -26,13 +26,13 @@ This project utilizes data provided by the [Aviation Stack website](https://avia
 By executing these steps, the project aims to provide insights into departure delays in the specified cities and facilitate informed decision-making for mitigating delays and improving passenger experiences.
 
 ## Tools
-1. CI/CD: GitHub Actions
-2. IaC: Terraform
-3. Orchestration: Google Cloud Composer (Apache Airflow)
-4. Data Lake: Google Cloud Storage
-5. Data Warehouse: Google BigQuery
-6. Data Ingestion (batch): Python, Data Load Tool
-7. Visualization: Google Looker Studio
+1. **CI/CD**: GitHub Actions
+2. **IaC**: Terraform
+3. **Orchestration**: Google Cloud Composer (Apache Airflow)
+4. **Data Lake**: Google Cloud Storage
+5. **Data Warehouse**: Google BigQuery
+6. **Data Ingestion (batch)**: Python, Data Load Tool
+7. **Visualization**: Google Looker Studio
 
 ## Reproducibility
 1. Run the main Terraform file (in the Terraform directory) with all the set configurations for initiating the Google Clou Platform (Composer, GCS, BQ).

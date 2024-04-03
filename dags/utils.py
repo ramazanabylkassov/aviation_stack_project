@@ -20,8 +20,6 @@ def api_to_gcs(ds=None, iata=None):
     os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = f'gs://{project_name}'
     yesterday = datetime.strptime(ds, '%Y-%m-%d').strftime('%Y_%m_%d')
 
-    print(f'!!!!!!! Yesterday was: {yesterday}')
-
     table_name = f"{iata}_{yesterday}"
 
     def fetch_csv(iata=None):
