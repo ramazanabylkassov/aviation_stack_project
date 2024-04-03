@@ -30,12 +30,12 @@ cit_api_to_gcs = PythonOperator(
     dag=dag
 )
 
-# raw_to_datamart = PythonOperator(
-#     task_id = "raw_to_datamart",
-#     python_callable=raw_to_datamart,
-#     dag=dag
-# )
+raw_to_datamart = PythonOperator(
+    task_id = "raw_to_datamart",
+    python_callable=raw_to_datamart,
+    dag=dag
+)
 
 cit_api_to_gcs 
 
-# Update 38
+# Update 39

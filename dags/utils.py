@@ -15,27 +15,11 @@ project_name = "de-project-flight-analyzer"
 
 def api_to_gcs(ds=None, iata=None):
     start_time = datetime.now()
-    print(f"TASK 1: API -> GCS for {iata} STARTED")
+    print(f"TASK 1: API -> GCS for {iata.upper()} STARTED")
 
-    # os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{project_name}'
     os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__BUCKET_URL'] = f'gs://{project_name}'
-    # os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__BUCKET_URL'] = f'gs://{project_name}'
-
-    ds_datetime = datetime.strptime(ds, '%Y-%m-%d')
-    yesterday = (ds_datetime - timedelta(days=1)).strftime('%Y_%m_%d')
-
-    print(f"""
-          TEST PRINT:
-          - ds_datetime: {ds_datetime}
-          - yesterday: {yesterday}
-          - ds: {ds}
-        """)
-    
-    pipeline = dlt.pipeline(
-        pipeline_name=f'flights_departures_{iata}',
-        destination='filesystem',
-        dataset_name=f'{iata}'
-    )
+    yesterday = (datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y_%m_%d')
+    table_name = f"{iata}_{yesterday}"
 
     def fetch_csv(iata=None):
         API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
@@ -60,8 +44,13 @@ def api_to_gcs(ds=None, iata=None):
         return output_file, api_total_size
 
     json_file, api_total_size = fetch_csv(iata=iata)
-    table_name = f"{iata}_{yesterday}"
 
+    pipeline = dlt.pipeline(
+        pipeline_name=f'flights_departures_{iata}',
+        destination='filesystem',
+        dataset_name=f'{iata}'
+    )
+    
     if json_file:
         load_info = pipeline.run(
             json_file, 
@@ -75,47 +64,50 @@ def api_to_gcs(ds=None, iata=None):
     
     end_time = datetime.now()
     time_taken = end_time - start_time
-
+    
     print(f"""
-          TASK 1: API -> GCS for {iata} FINITO
+          TASK 1: API -> GCS for {iata.upper()} FINITO
           RESULTS:
+            - Logical date: {ds}
             - Start time: {start_time}
             - End time: {end_time}
-            - Time taken: {time_taken} seconds
-            - Uploaded to GCS bucket: {project_name}/{iata}
-            - Foulder name: {table_name}
+            - Time taken: {time_taken}
+            - GCS path: {project_name}/{iata}/{table_name}
             - API request size: {api_total_size}
             """)
 
 def gcs_to_bigquery(ds=None, iata=None):
-    # Define your GCS parameters
-    ds_minus_one = datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)
-    yesterday = ds_minus_one.strftime('%Y_%m_%d')
-    bucket_name = 'de-project-flight-analyzer'
-    json_file_path = f'{iata}/{iata}_{yesterday}/'
-    unique_key_columns = ["departure_scheduled", "arrival_airport"]  # Adjust to match your schema's unique identifier
+    start_time = datetime.now()
+    print(f"TASK 2: GCS -> BQ for {iata.upper()} STARTED")
+    
+    # Set connections to GCS and BQ
+    gcs_client = storage.Client()
+    bq_client = bigquery.Client()
 
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
+    # Define GCS parameters
+    ds_datetime = datetime.strptime(ds, '%Y-%m-%d') - timedelta(days=1)
+    yesterday_underscore = ds_datetime.strftime('%Y_%m_%d')
+    yesterday_dash = ds_datetime.strftime('%Y-%m-%d')
+    table_name = f"{iata}_{yesterday_underscore}"
+    json_file_path = f'{iata}/{table_name}/'
+    unique_key_columns = ["departure_scheduled", "arrival_airport"]
+
+    # Get the json data from GCS bucket
+    bucket = gcs_client.bucket(project_name)
     blobs = bucket.list_blobs(prefix=json_file_path)
-
-    all_data = []
-
+    json_data = []
     for blob in blobs:
-        # Download the blob as bytes
         bytes_data = blob.download_as_bytes()
         with gzip.open(io.BytesIO(bytes_data), 'rt', encoding='utf-8') as gzip_file:
             for line in gzip_file:
                 data = json.loads(line)
-                # Perform your data transformation here
-                all_data.append(data)
+                json_data.append(data)
         break
-    else:  # No files found
+    else:
         raise FileNotFoundError(f"No files found for prefix {json_file_path}")
     
     def transform_data(json_data=None, yesterday=None, unique_key=None):
-        df = pd.json_normalize(json_data)
-        yesterday = yesterday.strftime('%Y-%m-%d')
+        # Define parameters
         old_columns = [
             'flight_date',
             'flight__number',
@@ -136,21 +128,24 @@ def gcs_to_bigquery(ds=None, iata=None):
         ]
         new_columns = [column.replace('__', '_') for column in old_columns]
         
-        # Select the desired columns first
-        df_old = df[old_columns].copy()
-        # Apply the filter for 'yesterday' on the 'departure__scheduled' column
-        df_filtered = df_old[df_old['flight_date'] == yesterday]
-        # Rename columns by replacing double underscores with single underscores
+        # Transform the data via pandas
+        df = pd.json_normalize(json_data)[old_columns].copy()
+        df_filtered = df[df['flight_date'] == yesterday]
         df_filtered.columns = new_columns
         df_filtered = df_filtered.replace({np.nan: None}).drop_duplicates(subset=unique_key, keep='last')
-        # Convert the filtered and renamed DataFrame to a dictionary
-        json_file = df_filtered.to_dict(orient='records')  # Assuming you want a list of records
+        transformed_dataset_size = df_filtered.size[0]
+        # Convert back to json
+        json_file = df_filtered.to_dict(orient='records')
         
-        return json_file, new_columns
+        return json_file, new_columns, transformed_dataset_size
 
-    json_to_bq, all_columns = transform_data(json_data=all_data, yesterday=ds_minus_one, unique_key=unique_key_columns)
+    json_to_bq, new_columns, transformed_dataset_size = transform_data(
+        json_data=json_data, 
+        yesterday=yesterday_dash, 
+        unique_key=unique_key_columns
+        )
 
-    # Define the schema as before
+    # Define the schema
     schema = [
         bigquery.SchemaField("flight_date", "DATE"),
         bigquery.SchemaField("flight_number", "INT64"),
@@ -170,90 +165,100 @@ def gcs_to_bigquery(ds=None, iata=None):
         bigquery.SchemaField("airline_iata", "STRING")
     ]
 
-    bigquery_client = bigquery.Client()
-    dataset_id = f'{bucket_name}.flights_raw_data'
+    dataset_id = f'{project_name}.flights_raw_data'
     main_table_id = f'{iata}'
-    full_table_id = f"{dataset_id}.{main_table_id}"
-    # # Try to fetch the table, and create it if it doesn't exist
+    main_table_full_id = f"{dataset_id}.{main_table_id}"
+    temp_table_id = f'temp_table_{iata}'
+    temp_table_full_id = f"{dataset_id}.{temp_table_id}"
+
     try:
-        bigquery_client.get_table(full_table_id)  # This checks if the table exists
-        print(f"Table {full_table_id} already exists.")
+        bq_client.get_table(main_table_full_id)
+        print(f"Table {main_table_full_id} already exists.")
     except NotFound:
-        table = bigquery.Table(full_table_id, schema=schema)
-        bigquery_client.create_table(table)  # This creates the table
-        print(f"Table {full_table_id} created.")
+        table = bigquery.Table(main_table_full_id, schema=schema)
+        bq_client.create_table(table)
+        print(f"Table {main_table_full_id} created.")
     
-    def load_json_to_temp_table(json_data, dataset_id, temp_table_id, schema):
-        client = bigquery.Client()
-
-        table_full_id = f"{dataset_id}.{temp_table_id}"
+    def load_json_to_temp_table(json_data, temp_table_full_id, schema):
         job_config = bigquery.LoadJobConfig(schema=schema)
-
-        # Create TableReference object
-        table_ref = bigquery.TableReference.from_string(table_full_id)
+        table_ref = bigquery.TableReference.from_string(temp_table_full_id)
 
         try:
-            # Try to fetch the table to see if it exists
-            client.get_table(table_ref)
+            bq_client.get_table(table_ref)
             print(f"Table {temp_table_id} already exists.")
         except NotFound:
-            # If the table does not exist, simply proceed as the table will be created during load
             print(f"Table {temp_table_id} does not exist, will be created during data load.")
         except GoogleAPIError as e:
             print(f"Encountered an error checking for table existence: {e}")
             return
 
         try:
-            # Perform the data load
-            load_job = client.load_table_from_json(
+            load_job = bq_client.load_table_from_json(
                 json_data,
                 destination=table_ref,
                 job_config=job_config
             )
-            # Wait for the job to complete
             load_job.result()
             print(f"Data loaded into temporary table {temp_table_id}.")
         except GoogleAPIError as e:
             print(f"Failed to load data into {temp_table_id}: {e}")
 
-    temp_table_id = f'temp_table_{iata}'
-    load_json_to_temp_table(json_to_bq, dataset_id, temp_table_id, schema)
+    load_json_to_temp_table(json_to_bq, temp_table_full_id, schema)
 
-    def merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns):
-        client = bigquery.Client()
-
-        # Create the ON clause for the composite key
-        on_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
-
-        # Dynamically create the SET clause for all other columns
-        set_clause = ', '.join([f"T.{col} = S.{col}" for col in all_columns if col not in unique_key_columns])
-
+    def merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns):
+        # Merge temporary and main tables
+        compare_clause = ' AND '.join([f"T.{col} = S.{col}" for col in unique_key_columns])
+        update_clause = ', '.join([f"T.{col} = S.{col}" for col in new_columns if col not in unique_key_columns])
         merge_sql = f"""
-        MERGE `{dataset_id}.{main_table_id}` T
-        USING `{dataset_id}.{temp_table_id}` S
-        ON {on_clause}
+        MERGE `{main_table_full_id}` T
+        USING `{temp_table_full_id}` S
+        ON {compare_clause}
         WHEN MATCHED THEN
-            UPDATE SET {set_clause}
+            UPDATE SET {update_clause}
         WHEN NOT MATCHED THEN
             INSERT ROW
         """
-
-        # Execute the MERGE query
-        query_job = client.query(merge_sql)
-        query_job.result()  # Wait for the query to finish
+        query_job = bq_client.query(merge_sql)
+        query_job.result()
         print(f"Merge completed. Temporary data merged into {main_table_id}.")
 
-        # Clear the temporary table
+        # Get the row count of the main dataset after merging
+        # dataset_ref = bq_client.dataset(dataset_id, project=project_name)
+        # dataset = bq_client.get_dataset(dataset_ref)
+        query_job = bq_client.query(f"SELECT COUNT(*) as row_count FROM `{main_table_full_id}.__TABLES__`")
+        result = query_job.result()
+        row_count = list(result)[0].row_count
+
+        # Delete the temporary table
         clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
-        clear_job = client.query(clear_temp_table_sql)
+        clear_job = bq_client.query(clear_temp_table_sql)
         clear_job.result()
 
+        return row_count
+
     # Merge the temporary table into the main table
-    merge_temp_table_into_main_table(dataset_id, temp_table_id, main_table_id, unique_key_columns, all_columns)
+    row_count = merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns)
+
+    end_time = datetime.now()
+    time_taken = end_time - start_time
+    
+    print(f"""
+          TASK 2: GCS -> BQ for {iata.upper()} FINITO
+          RESULTS:
+            - Logical date: {ds}
+            - Start time: {start_time}
+            - End time: {end_time}
+            - Time taken: {time_taken}
+            - BQ path: {main_table_full_id}
+            - Size of the transformed dataset from GCS: 
+                - Columns: {transformed_dataset_size[1]}
+                - Rows: {transformed_dataset_size[0]}
+            - Size of the {main_table_full_id} dataset after merging: {row_count}
+            """)
 
 def raw_to_datamart():
     # Initialize BigQuery client
-    client = bigquery.Client()
+    bq_client = bigquery.Client()
 
     # Define datasets and tables
     source_dataset_id = "flights_raw_data"
@@ -264,11 +269,12 @@ def raw_to_datamart():
     kaz_iata_str = "'SCO', 'AKX', 'SAH', 'ALA', 'AYK', 'ATX', 'GUW', 'BXH', 'EKB', 'KGF', 'KOV', 'KSN', 'KZO', 'NQZ', 'URA', 'UKK', 'PWQ', 'PPK', 'PLX', 'CIT', 'TDK', 'DMB', 'HSA', 'UZR', 'USJ', 'SZI', 'DZN'"
 
     # Query data from source tables
-    combined_data = pd.concat([client.query(f"""
+    combined_data = pd.concat([bq_client.query(f"""
                                             SELECT 
                                                 flight_date,
                                                 departure_airport,
                                                 departure_scheduled,
+                                                departure_actual,
                                                 COALESCE(departure_delay, 0) AS departure_delay,
                                                 arrival_airport,
                                                 arrival_iata,
@@ -280,9 +286,9 @@ def raw_to_datamart():
                                             """).to_dataframe() for table_id in source_table_ids])
 
     # Create or replace table in destination dataset
-    destination_table_ref = client.dataset(destination_dataset_id).table(destination_table_id)
+    destination_table_ref = bq_client.dataset(destination_dataset_id).table(destination_table_id)
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")  # Replace the table if it exists
-    job = client.load_table_from_dataframe(combined_data, destination_table_ref, job_config=job_config)
-    job.result()  # Wait for job completion
+    job = bq_client.load_table_from_dataframe(combined_data, destination_table_ref, job_config=job_config)
+    job.result()
 
     print(f"Table {destination_dataset_id}.{destination_table_id} created or replaced with data from source tables.")
