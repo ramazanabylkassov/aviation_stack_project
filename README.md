@@ -23,7 +23,15 @@ The objective is to leverage information obtained from the [Aviation Stack websi
 4. **Visualization and Analysis**: Showcase analytical statistics and visualizations regarding departure delays through a Google Studio Looker dashboard. ([link](https://lookerstudio.google.com/reporting/a3e131ab-435c-452c-89d1-ec205d9e11c5))
 ![Looker Studio Dashboard](images/looker_dashboard.png)
 
-By executing these steps, the project aims to provide insights into departure delays in the specified cities and facilitate informed decision-making for mitigating delays and improving passenger experiences.
+## Flight ETL Workflow
+
+The Flight ETL workflow for this project is structured around a series of tasks, which are categorized into three main segments:
+1. Transfer from API to Google Cloud Storage (specific to each city).
+2. Movement from Google Cloud Storage to Google BigQuery (specific to each city).
+3. Processing from raw data in BigQuery to a unified BigQuery datamart (applicable across all cities).
+![dag_graph](images/flight_etl_graph.png)
+
+**Idempotency** within each task is maintained through the application of incremental loading strategies, including merging and replacing operations.
 
 ## Tools
 1. **CI/CD**: GitHub Actions
