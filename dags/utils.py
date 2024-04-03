@@ -12,7 +12,6 @@ import numpy as np
 import dlt
 
 project_name = "de-project-flight-analyzer"
-ds_datetime_global = '{{ ds }}'
 
 def api_to_gcs(ds=None, iata=None):
     start_time = datetime.now()
@@ -30,6 +29,7 @@ def api_to_gcs(ds=None, iata=None):
           - ds_datetime_global: {ds_datetime_global}
           - ds_datetime: {ds_datetime}
           - yesterday: {yesterday}
+          - ds: {ds}
         """)
     
     pipeline = dlt.pipeline(
