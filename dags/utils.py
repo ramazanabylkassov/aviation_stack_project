@@ -224,21 +224,12 @@ def gcs_to_bigquery(ds=None, iata=None):
         query_job.result()
         print(f"Merge completed. Temporary data merged into {main_table_id}.")
 
-        # Get the row count of the main dataset after merging
-        dataset_ref = bq_client.dataset(dataset_id, project=project_name)
-        dataset = bq_client.get_dataset(dataset_ref)
-        query_job = bq_client.query(f"SELECT COUNT(*) as row_count FROM `{main_table_full_id}.__TABLES__`")
-        result = query_job.result()
-        row_count = list(result)[0].row_count
-
         # Delete the temporary table
         clear_temp_table_sql = f"DROP TABLE `{dataset_id}.{temp_table_id}`"
         clear_job = bq_client.query(clear_temp_table_sql)
         clear_job.result()
 
-        return row_count
-
-    row_count = merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns)
+    merge_temp_table_into_main_table(main_table_full_id, temp_table_full_id, unique_key_columns, new_columns)
 
     end_time = datetime.now()
     time_taken = end_time - start_time
@@ -254,7 +245,6 @@ def gcs_to_bigquery(ds=None, iata=None):
             - Size of the transformed dataset from GCS: 
                 - Columns: {transformed_dataset_size[1]}
                 - Rows: {transformed_dataset_size[0]}
-            - Size of the {main_table_full_id} dataset after merging: {row_count}
             """)
 
 def raw_to_datamart(ds=None, cities=None):
@@ -308,5 +298,4 @@ def raw_to_datamart(ds=None, cities=None):
             - End time: {end_time}
             - Time taken: {time_taken}
             - BQ path of the result table: {full_table_id}
-            - Size of the {full_table_id} dataset after merging: {row_count}
             """)

@@ -31,21 +31,27 @@ dag = DAG(
 # )
 
 cit_gcs_to_bigquery = PythonOperator(
-        task_id = f"cit_gcs_to_bigquery",
-        python_callable=gcs_to_bigquery,
-        op_kwargs={
-            'ds': '{{ ds }}', 
-            'iata': 'cit'
-            },
-        dag=dag
-    )
+    task_id = f"cit_gcs_to_bigquery",
+    python_callable=gcs_to_bigquery,
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'iata': 'cit'
+        },
+    dag=dag
+)
+
+cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}
 
 raw_to_datamart = PythonOperator(
-    task_id = "raw_to_datamart",
+    task_id = "BIGQUERY_raw_to_datamart",
     python_callable=raw_to_datamart,
+    op_kwargs={
+        'ds': '{{ ds }}', 
+        'cities': cities
+        },
     dag=dag
 )
 
 cit_gcs_to_bigquery >> raw_to_datamart
 
-# Update 43
+# Update 44
