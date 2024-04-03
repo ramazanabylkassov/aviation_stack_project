@@ -15,7 +15,7 @@ project_name = "de-project-flight-analyzer"
 ds_datetime_global = '{{ ds }}'
 
 def api_to_gcs(ds=None, iata=None):
-    start_time = datetime.datetime.now()
+    start_time = datetime.now()
     print(f"TASK 1: API -> GCS for {iata} STARTED")
 
     # os.environ[f'FLIGHTS_DEPARTURES_{iata.upper()}__DESTINATION__FILESYSTEM__BUCKET_URL'] = f'gs://{project_name}'
@@ -74,7 +74,7 @@ def api_to_gcs(ds=None, iata=None):
     else:
         print("No data to upload.")
     
-    end_time = datetime.datetime.now()
+    end_time = datetime.now()
     time_taken = end_time - start_time
 
     print(f"""
