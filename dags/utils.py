@@ -26,7 +26,6 @@ def api_to_gcs(ds=None, iata=None):
 
     print(f"""
           TEST PRINT:
-          - ds_datetime_global: {ds_datetime_global}
           - ds_datetime: {ds_datetime}
           - yesterday: {yesterday}
           - ds: {ds}
