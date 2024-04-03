@@ -7,6 +7,7 @@ default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': datetime(2024, 3, 30),
+    'catchup': False,
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -14,7 +15,7 @@ default_args = {
 }
 
 dag = DAG(
-    'testdag', 
+    'FlightsETL', 
     default_args=default_args,
     description='flights etl dag',
     schedule_interval="0 1 * * *", 
@@ -54,4 +55,4 @@ raw_to_datamart = PythonOperator(
 
 cit_gcs_to_bigquery >> raw_to_datamart
 
-# Update 45
+# Update 46
