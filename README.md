@@ -35,6 +35,6 @@ By executing these steps, the project aims to provide insights into departure de
 7. **Visualization**: Google Looker Studio
 
 ## Reproducibility
-1. Run the main Terraform file (in the Terraform directory) with all the set configurations for initiating the Google Clou Platform (Composer, GCS, BQ).
+1. Run the [main.tf](terraform/main.tf) file (in the Terraform directory) with all the set configurations for initiating the Google Cloud Platform (Composer, GCS, BQ).
 2. Use the [`ci_cd.yml`](.github/workflows/ci_cd.yml) file inside the `.github/workflow` directory to set up CI/CD with your GitHub repository and Google Composer.
 3. Upload the DAG and utility Python scripts located in the `dag` directory to your repository.
