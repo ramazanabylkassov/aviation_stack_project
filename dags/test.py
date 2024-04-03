@@ -1,58 +1,24 @@
-from utils import raw_to_datamart, gcs_to_bigquery, api_to_gcs
-from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.models import DagBag, TaskInstance
+from datetime import datetime
 
-default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': datetime(2024, 3, 30),
-    'catchup': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=10), 
-}
+def test_dag_import():
+    """DAG Import Test checks if all DAGs in the specified folder can be imported without any errors. This helps catch syntax errors, import failures, or other initialisation issues."""
 
-dag = DAG(
-    'FlightsETL', 
-    default_args=default_args,
-    description='flights etl dag',
-    schedule_interval="0 1 * * *", 
-)
+    dag_bag = DagBag(dag_folder='path/to/your/dag/directory', include_examples=False)
+    assert dag_bag.import_errors == {}, "DAG import failed"
 
-# cit_api_to_gcs = PythonOperator(
-#     task_id = f"cit_api_to_gcs",
-#     python_callable=api_to_gcs,
-#     op_kwargs={
-#         'ds': '{{ ds }}', 
-#         'iata': f'cit'
-#         },
-#     dag=dag
-# )
-
-cit_gcs_to_bigquery = PythonOperator(
-    task_id = f"cit_gcs_to_bigquery",
-    python_callable=gcs_to_bigquery,
-    op_kwargs={
-        'ds': '{{ ds }}', 
-        'iata': 'cit'
-        },
-    dag=dag
-)
-
-cities = {'ASTANA': 'nqz', 'ALMATY': 'ala', 'SHYMKENT': 'cit'}
-
-raw_to_datamart = PythonOperator(
-    task_id = "BIGQUERY_raw_to_datamart",
-    python_callable=raw_to_datamart,
-    op_kwargs={
-        'ds': '{{ ds }}', 
-        'cities': cities
-        },
-    dag=dag
-)
-
-cit_gcs_to_bigquery >> raw_to_datamart
-
-# Update 46
+def test_task_execution():
+    """Task Execution Test focuses on executing a specific task within a DAG to ensure it can run to completion successfully. This test can be extended or modified to check for specific output values or states depending on what your task does."""
+    # Import the DAG from your project
+    from flights_etl import dag as my_dag
+    
+    # Retrieve the specific task
+    task = my_dag.get_task('BIGQUERY_raw_to_datamart')
+    
+    # Simulate execution of the task
+    ti = TaskInstance(task=task, execution_date=datetime.now())
+    context = ti.get_template_context()
+    ti.run(ignore_ti_state=True)  # Set ignore_ti_state to True to not check the previous state of the TaskInstance
+    
+    # Verify the task succeeded
+    assert ti.state == 'success', "Task execution failed"
