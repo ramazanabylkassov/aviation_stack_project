@@ -42,7 +42,14 @@ The Flight ETL workflow for this project is structured around a series of tasks,
 6. **Data Warehouse**: Google BigQuery
 7. **Visualization**: Google Looker Studio
 
-## Reproducibility
-1. Run the [main.tf](terraform/main.tf) file (in the Terraform directory) with all the set configurations for initiating the Google Cloud Platform (Composer, GCS, BQ).
-2. Use the [`ci_cd.yml`](.github/workflows/ci_cd.yml) file inside the `.github/workflow` directory to set up CI/CD with your GitHub repository and Google Composer.
-3. Upload the DAG and utility Python scripts located in the `dag` directory to your repository.
+## Setting Up a Project for Flight Data Analysis
+1. **Project Creation on Google Cloud Platform (GCP):**
+   - Tip: Consider creating a new Gmail account to take advantage of the $300 free trial offer.
+2. **Register on Aviation Stack to Obtain API Key:**
+   - Note: The free tier of the API allows for 100 data points per request and a total of 100 requests per month. For my needs, involving data collection from three cities, I set up three separate free accounts.
+3. **Execute the Terraform Configuration:**
+   - Run the [`main.tf`](terraform/main.tf) file located in the Terraform directory. This script configures necessary services on GCP, including Cloud Composer, Google Cloud Storage (GCS), and BigQuery (BQ).
+4. **Set Up Continuous Integration/Continuous Deployment (CI/CD):**
+   - Use the [`ci_cd.yml`](.github/workflows/ci_cd.yml) file found in the `.github/workflows` directory to integrate CI/CD processes with your GitHub repository and Google Cloud Composer.
+5. **Deploy Data Processing Scripts:**
+   - Use the Directed Acyclic Graphs (DAGs) and the utility Python scripts from the [`dag`](dags/) folder to your repository for data orchestration and analysis.
