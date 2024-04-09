@@ -281,13 +281,13 @@ def raw_to_datamart(ds=None, cities=None):
                 airline_name,
                 EXTRACT(HOUR FROM departure_scheduled) AS hour,
                 CASE 
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Monday' THEN '1_Monday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Tuesday' THEN '2_Tuesday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Wednesday' THEN '3_Wednesday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Thursday' THEN '4_Thursday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Friday' THEN '5_Friday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Saturday' THEN '6_Saturday'
-                    WHEN FORMAT_DATE('%A', flight_date) = 'Sunday' THEN '7_Sunday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Monday' THEN '_1_Monday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Tuesday' THEN '_2_Tuesday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Wednesday' THEN '_3_Wednesday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Thursday' THEN '_4_Thursday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Friday' THEN '_5_Friday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Saturday' THEN '_6_Saturday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Sunday' THEN '_7_Sunday'
                 END AS weekday,
                 IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
             FROM `{source_dataset_id}.{table_id}`
