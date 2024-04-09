@@ -268,29 +268,33 @@ def raw_to_datamart(ds=None, cities=None):
     kaz_iata_str = "'SCO', 'AKX', 'SAH', 'ALA', 'AYK', 'ATX', 'GUW', 'BXH', 'EKB', 'KGF', 'KOV', 'KSN', 'KZO', 'NQZ', 'URA', 'UKK', 'PWQ', 'PPK', 'PLX', 'CIT', 'TDK', 'DMB', 'HSA', 'UZR', 'USJ', 'SZI', 'DZN'"
 
     # Query data from source tables
-    combined_data = pd.concat([bq_client.query(f"""
-                                            SELECT 
-                                                flight_date,
-                                                departure_airport,
-                                                departure_scheduled,
-                                                departure_actual,
-                                                COALESCE(departure_delay, 0) AS departure_delay,
-                                                arrival_airport,
-                                                arrival_iata,
-                                                airline_name,
-                                                CASE 
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Monday' THEN '1_Monday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Tuesday' THEN '2_Tuesday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Wednesday' THEN '3_Wednesday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Thursday' THEN '4_Thursday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Friday' THEN '5_Friday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Saturday' THEN '6_Saturday'
-                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Sunday' THEN '7_Sunday'
-                                                END AS weekday
-                                                EXTRACT(HOUR FROM departure_scheduled) AS hour,
-                                                IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
-                                            FROM `{source_dataset_id}.{table_id}`
-                                            """).to_dataframe() for table_id in list(cities.values())])
+    combined_data = pd.concat([
+        bq_client.query(f"""
+            SELECT 
+                flight_date,
+                departure_airport,
+                departure_scheduled,
+                departure_actual,
+                COALESCE(departure_delay, 0) AS departure_delay,
+                arrival_airport,
+                arrival_iata,
+                airline_name,
+                EXTRACT(HOUR FROM departure_scheduled) AS hour,
+                CASE 
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Monday' THEN '1_Monday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Tuesday' THEN '2_Tuesday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Wednesday' THEN '3_Wednesday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Thursday' THEN '4_Thursday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Friday' THEN '5_Friday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Saturday' THEN '6_Saturday'
+                    WHEN FORMAT_DATE('%A', flight_date) = 'Sunday' THEN '7_Sunday'
+                END AS weekday,
+                IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
+            FROM `{source_dataset_id}.{table_id}`
+        """).to_dataframe()
+        for table_id in list(cities.values())
+    ])
+
 
     # Create or replace table in destination dataset
     destination_table_ref = bq_client.dataset(destination_dataset_id).table(destination_table_id)
