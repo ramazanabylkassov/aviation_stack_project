@@ -22,7 +22,7 @@ def api_to_gcs(ds=None, iata=None):
 
     table_name = f"{iata}_{yesterday}"
 
-    def fetch_csv(iata=None):
+    def fetch_csv(iata='backup'):
         API_ACCESS_KEY = os.environ.get(f'API_{iata}_ACCESS_KEY')
         if not API_ACCESS_KEY:
             raise ValueError(f'API_{iata}_ACCESS_KEY not defined')
@@ -30,7 +30,6 @@ def api_to_gcs(ds=None, iata=None):
         offset = 0
         output_file = []
         api_total_size = 0
-
         while True:
             url = f"{url_base}&offset={offset}"
             response = requests.get(url)
@@ -41,11 +40,13 @@ def api_to_gcs(ds=None, iata=None):
             if int(data["pagination"]["count"]) < 100:
                 break
             offset += 100
-        
         return output_file, api_total_size
-
-    json_file, api_total_size = fetch_csv(iata=iata)
-
+    
+    try:
+        json_file, api_total_size = fetch_csv(iata=iata)
+    except requests.exceptions.HTTPError:
+        json_file, api_total_size = fetch_csv()
+    
     pipeline = dlt.pipeline(
         pipeline_name=f'flights_departures_{iata}',
         destination='filesystem',
@@ -277,7 +278,15 @@ def raw_to_datamart(ds=None, cities=None):
                                                 arrival_airport,
                                                 arrival_iata,
                                                 airline_name,
-                                                FORMAT_DATE('%A', flight_date) AS weekday, 
+                                                CASE 
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Monday' THEN '1_Monday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Tuesday' THEN '2_Tuesday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Wednesday' THEN '3_Wednesday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Thursday' THEN '4_Thursday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Friday' THEN '5_Friday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Saturday' THEN '6_Saturday'
+                                                    WHEN FORMAT_DATE('%A', flight_date) = 'Sunday' THEN '7_Sunday'
+                                                END AS weekday
                                                 EXTRACT(HOUR FROM departure_scheduled) AS hour,
                                                 IF(arrival_iata IN ({kaz_iata_str}), 'Kazakhstan', 'International') AS flight_destination_type
                                             FROM `{source_dataset_id}.{table_id}`
