@@ -10,19 +10,19 @@ Analyzing departure delays enables the identification of patterns and trends, op
 The objective is to leverage information obtained from the [Aviation Stack website](https://aviationstack.com/) for examining various factors potentially associated with departure delays. This investigation will encompass the day of the week of departure, destination, and the airline. The project intends to fetch data in **batches daily** through the specified API, execute necessary data transformations, and present the findings on a dashboard, as outlined in the architecture below.
 
 ## Architecture
-![project architecture](images/Ramazan%20Data%20Eng%20Project.jpg)
+![project architecture](Screenshots/Ramazan%20Data%20Eng%20Project.jpg)
 
 ## Strategy 
 1. **Data Upload**: Utilize a [data load tool](https://dlthub.com/) to upload data from the Aviation Stack API to Google Cloud Storage daily.
-![GCS project bucket](images/gcs_project_bucket.png)
+![GCS project bucket](Screenshots/gcs_project_bucket.png)
   
 2. **Data Transformation and Loading**: Extract data from Google Cloud Storage, transform it, and load it into separate tables within a raw data dataset in Google BigQuery.
   
 3. **Data Integration**: Combine all relevant data, perform necessary cleaning, and load it into a data mart dataset within Google BigQuery.
-![Google BigQuery datasets](images/bigquery_datasets.png)
+![Google BigQuery datasets](Screenshots/bigquery_datasets.png)
 
 4. **Visualization and Analysis**: Showcase analytical statistics and visualizations regarding departure delays through a Google Studio Looker dashboard. ([link](https://lookerstudio.google.com/reporting/a3e131ab-435c-452c-89d1-ec205d9e11c5))
-![Looker Studio Dashboard](images/looker_dashboard.png)
+![Looker Studio Dashboard](Screenshots/looker_dashboard.png)
 
 ## Flight ETL Workflow
 
@@ -30,7 +30,7 @@ The Flight ETL workflow for this project is structured around a series of tasks,
 1. Transfer from API to Google Cloud Storage (specific to each city).
 2. Movement from Google Cloud Storage to Google BigQuery (specific to each city).
 3. Processing from raw data in BigQuery to a unified BigQuery datamart (applicable across all cities).
-![dag_graph](images/flight_etl_graph.png)
+![dag_graph](Screenshots/flight_etl_graph.png)
 
 **Idempotency** within each task is maintained through the application of incremental loading strategies, including merging and replacing operations.
 
