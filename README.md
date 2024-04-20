@@ -19,7 +19,7 @@ The objective is to leverage information obtained from the [Aviation Stack websi
 2. **Data Transformation and Loading**: Extract data from Google Cloud Storage, transform it, and load it into separate tables within a raw data dataset in Google BigQuery.
   
 3. **Data Integration**: Combine all relevant data, perform necessary cleaning, and load it into a data mart dataset within Google BigQuery.
-![Google BigQuery datasets](Screenshots/bigquery_datasets.png)
+![Google BigQuery datasets](Screenshots/bigquery_operations.png)
 
 4. **Visualization and Analysis**: Showcase analytical statistics and visualizations regarding departure delays through a Google Studio Looker dashboard. ([link](https://lookerstudio.google.com/reporting/a3e131ab-435c-452c-89d1-ec205d9e11c5))
 ![Looker Studio Dashboard](Screenshots/looker_dashboard.png)
