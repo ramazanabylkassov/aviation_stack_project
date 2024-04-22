@@ -1,6 +1,6 @@
 # DepartureDelayDiagnosis
 
-[YouTube demo video](https://youtu.be/yMKLz_SAqw4?si=mwCZvA6qNBiYPKp0)
+[YouTube demo video](https://youtu.be/yMKLz_SAqw4?si=mwCZvA6qNBiYPKp0)  
 ***Note:*** The project was operational for three weeks (from March 29 to April 18, 2024) due to the constraints of the GCP free trial.
 
 Welcome to the "DepartureDelayDiagnosis" Data Engineering project, focusing on analyzing and addressing departure delays in three cities of republican significance in Kazakhstan: Astana (NQZ), Almaty (ALA), and Shymkent (CIT).
